@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAV System - Login</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;500;700;900&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0b0b0e;
+      --bg-secondary: #121217;
+      --bg-card: rgba(22, 22, 28, 0.85);
+      --border-glow: rgba(140, 110, 80, 0.25);
+      --border-glow-active: rgba(207, 172, 98, 0.75);
+      --text-primary: #f1f5f9;
+      --text-secondary: #a89f91;
+      --neon-cyan: #cfac62;
+      /* Burnished Gold */
+      --neon-purple: #b91c1c;
+      /* Crimson Dragon Blood */
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Lora', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23cfac62" stroke-width="1.8" opacity="0.6" filter="url(%23goldGlow)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGrad)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23fff5e0" stroke-width="0.6" opacity="0.9"/></svg>') 0 0, auto;
+    }
+
+    a,
+    button,
+    .btn,
+    .tab,
+    .btn-google {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGradHover" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlowHover" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23f59e0b" stroke-width="1.8" opacity="0.8" filter="url(%23goldGlowHover)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGradHover)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23ffffff" stroke-width="0.6" opacity="0.95"/></svg>') 0 0, pointer;
+    }
+
+    /* Gold Gilt Corner Brackets styling */
+    .corner-bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      z-index: 5;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      opacity: 0.65;
+    }
+
+    .corner-tl {
+      top: 8px;
+      left: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18V2h16M2 2l8 8M6 2h6M2 6v6M6 6h1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-tr {
+      top: 8px;
+      right: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18V2H6M22 2l-8 8M18 2h-6M22 6v6M18 6h-1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-bl {
+      bottom: 8px;
+      left: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v16h16M2 22l8-8M6 22h6M2 18v-6M6 18h1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-br {
+      bottom: 8px;
+      right: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6v16H6M22 22l-8-8M18 22h-6M22 18v-6M18 18h-1"/></svg>') no-repeat center/contain;
+    }
+
+    .box:hover .corner-tl {
+      top: 4px;
+      left: 4px;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px var(--neon-cyan));
+    }
+
+    .box:hover .corner-tr {
+      top: 4px;
+      right: 4px;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px var(--neon-cyan));
+    }
+
+    .box:hover .corner-bl {
+      bottom: 4px;
+      left: 4px;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px var(--neon-cyan));
+    }
+
+    .box:hover .corner-br {
+      bottom: 4px;
+      right: 4px;
+      opacity: 1;
+      filter: drop-shadow(0 0 4px var(--neon-cyan));
+    }
+
+    /* Ancient Vignette Overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, transparent 20%, rgba(7, 8, 10, 0.95) 100%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Song of Ice and Fire: Drifting Elements */
+    .bg-embers {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      left: 50%;
+      background-image:
+        radial-gradient(circle, rgba(245, 158, 11, 0.15) 1px, transparent 1px),
+        radial-gradient(circle, rgba(185, 28, 28, 0.1) 1.5px, transparent 1.5px);
+      background-size: 80px 140px;
+      z-index: -1;
+      pointer-events: none;
+      animation: embers-float 25s linear infinite;
+    }
+
+    .bg-frost {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      right: 50%;
+      background-image:
+        radial-gradient(circle, rgba(56, 189, 248, 0.15) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.1) 1.5px, transparent 1.5px);
+      background-size: 100px 150px;
+      z-index: -1;
+      pointer-events: none;
+      animation: frost-float 30s linear infinite;
+    }
+
+    @keyframes embers-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 40px -280px;
+      }
+    }
+
+    @keyframes frost-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: -30px 300px;
+      }
+    }
+
+    /* Ambient Glows */
+    .bg-glow-1,
+    .bg-glow-2,
+    .bg-glow-3 {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.35;
+      will-change: transform, opacity;
+    }
+
+    .bg-glow-1 {
+      top: -10%;
+      left: -10%;
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 75%);
+      animation: bg-move-1 25s ease-in-out infinite alternate, firelight-flicker 4s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-2 {
+      bottom: -15%;
+      right: -15%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 75%);
+      animation: bg-move-2 30s ease-in-out infinite alternate, firelight-flicker 5s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-3 {
+      top: 35%;
+      left: 30%;
+      width: 35vw;
+      height: 35vw;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 75%);
+      animation: bg-move-3 22s ease-in-out infinite alternate, firelight-flicker 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes firelight-flicker {
+
+      0%,
+      100% {
+        opacity: 0.28;
+      }
+
+      25% {
+        opacity: 0.38;
+      }
+
+      50% {
+        opacity: 0.25;
+      }
+
+      75% {
+        opacity: 0.42;
+      }
+    }
+
+    @keyframes bg-move-1 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.3;
+      }
+
+      100% {
+        transform: translate(12vw, 8vh) scale(1.25);
+        opacity: 0.45;
+      }
+    }
+
+    @keyframes bg-move-2 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.25;
+      }
+
+      100% {
+        transform: translate(-8vw, -12vh) scale(1.2);
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes bg-move-3 {
+      0% {
+        transform: translate(-10vw, -10vh) scale(0.9);
+        opacity: 0.18;
+      }
+
+      100% {
+        transform: translate(8vw, 12vh) scale(1.2);
+        opacity: 0.35;
+      }
+    }
+
+    /* LAYOUT CONTAINER */
+    .login-container {
+      display: flex;
+      width: 100vw;
+      min-height: 100vh;
+      position: relative;
+      z-index: 10;
+    }
+
+    @media (max-width: 900px) {
+      .login-container {
+        flex-direction: column;
+      }
+
+      .login-visual {
+        height: 35vh !important;
+        min-height: 250px;
+        width: 100% !important;
+      }
+
+      .login-form-side {
+        width: 100% !important;
+        padding: 40px 20px !important;
+      }
+
+      .visual-title {
+        font-size: 2.2rem !important;
+      }
+    }
+
+    /* LEFT SIDE: VISUAL */
+    .login-visual {
+      flex: 1;
+      position: relative;
+      background: url('/static/img/login_bg.png') center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      overflow: hidden;
+    }
+
+    .visual-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(11, 11, 14, 0.2) 20%, rgba(7, 8, 10, 0.9) 100%),
+        linear-gradient(to right, transparent, rgba(11, 11, 14, 0.95));
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .visual-content {
+      position: relative;
+      z-index: 2;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    .visual-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 3px;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+      text-transform: uppercase;
+    }
+
+    .visual-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 20px;
+      background: linear-gradient(120deg, var(--text-primary) 20%, #ffdf9e 40%, #cfac62 60%, var(--text-primary) 80%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.95));
+      animation: text-shine 6s linear infinite;
+    }
+
+    @keyframes text-shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    .visual-desc {
+      font-family: 'Lora', serif;
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.6;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    /* RIGHT SIDE: FORM */
+    .login-form-side {
+      width: 460px;
+      background: #0b0b0e;
+      border-left: 2px solid #cfac62;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      position: relative;
+    }
+
+    /* LOGIN BOX */
+    .box {
+      background: rgba(22, 22, 28, 0.85);
+      border: 2px double #cfac62;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Candle Flicker Hover Effect */
+    @keyframes gold-flicker {
+
+      0%,
+      100% {
+        border-color: rgba(207, 172, 98, 0.25);
+        box-shadow: 0 0 10px rgba(207, 172, 98, 0.05);
+      }
+
+      50% {
+        border-color: rgba(207, 172, 98, 0.8);
+        box-shadow: 0 0 20px rgba(207, 172, 98, 0.3);
+      }
+    }
+
+    .box:hover {
+      animation: gold-flicker 1.5s infinite alternate;
+    }
+
+    .brand {
+      text-align: center;
+      padding: 36px 30px 0;
+    }
+
+    .brand .icon {
+      font-size: 2.2rem;
+      display: block;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 0 6px var(--neon-cyan));
+      animation: float 3.5s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-4px)
+      }
+    }
+
+    .brand h1 {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--text-primary);
+    }
+
+    .brand p {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+
+    .tab-row {
+      display: flex;
+      margin: 28px 30px 0;
+      border-bottom: 2px solid rgba(207, 172, 98, 0.25);
+      gap: 4px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.25s;
+      user-select: none;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .tab.active {
+      color: var(--neon-cyan);
+      border-bottom-color: var(--neon-cyan);
+      background: rgba(207, 172, 98, 0.08);
+      text-shadow: 0 0 6px rgba(207, 172, 98, 0.3);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--neon-cyan);
+      background: rgba(207, 172, 98, 0.03);
+    }
+
+    .form-wrap {
+      padding: 24px 30px 32px;
+    }
+
+    .form-panel {
+      display: none;
+    }
+
+    .form-panel.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .ico {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1rem;
+      pointer-events: none;
+      opacity: 0.6;
+      color: var(--neon-cyan);
+    }
+
+    .form-group input {
+      width: 100%;
+      background: rgba(11, 11, 14, 0.7);
+      border: 1.5px solid rgba(207, 172, 98, 0.25);
+      border-radius: 6px;
+      padding: 12px 14px 12px 42px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      outline: none;
+      font-family: 'Lora', serif;
+      transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--neon-cyan);
+      background: rgba(22, 22, 28, 0.95);
+      box-shadow: 0 0 10px rgba(207, 172, 98, 0.15);
+    }
+
+    .form-group input::placeholder {
+      color: rgba(168, 159, 145, 0.4);
+    }
+
+    .alert {
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Cinzel', serif;
+      font-weight: 500;
+    }
+
+    .alert-error {
+      background: rgba(185, 28, 28, 0.15);
+      border: 1px solid var(--neon-purple);
+      color: #ffa4a4;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #cfac62, #8f7034);
+      border: 1px solid #cfac62;
+      color: #0b0b0e;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s;
+      margin-top: 4px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 8px rgba(207, 172, 98, 0.25);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(207, 172, 98, 0.5);
+      background: linear-gradient(135deg, #e5c583, #a68442);
+    }
+
+    .btn-submit:active {
+      transform: scale(0.98);
+    }
+
+    .hint {
+      text-align: center;
+      margin-top: 18px;
+      font-family: 'Lora', serif;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .hint span {
+      color: var(--neon-cyan);
+      font-weight: 700;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .hint span:hover {
+      color: #f1d592;
+      text-shadow: 0 0 4px rgba(207, 172, 98, 0.3);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0 16px;
+      color: rgba(207, 172, 98, 0.3);
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(207, 172, 98, 0.2);
+    }
+
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(11, 11, 14, 0.85);
+      border: 1px solid rgba(207, 172, 98, 0.35);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.5px;
+    }
+
+    .btn-google:hover {
+      background: rgba(22, 22, 28, 0.95);
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(207, 172, 98, 0.15);
+    }
+
+    .btn-google img {
+      width: 18px;
+      height: 18px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 16px 0 22px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      border-top: 1px solid rgba(207, 172, 98, 0.15);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Floating Shifting Firelight Elements -->
+  <div class="bg-embers"></div>
+  <div class="bg-frost"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="bg-glow-3"></div>
+
+  <div class="login-container">
+
+    <!-- LEFT SIDE: VISUAL -->
+    <div class="login-visual">
+      <div class="visual-overlay"></div>
+      <div class="visual-content">
+        <div class="visual-tag">Citadel Surveillance</div>
+        <h1 class="visual-title">UAV Disaster<br>management</h1>
+        <p class="visual-desc">Real-time aerial intelligence to detect fires, floods, and storms early, supporting
+          rescue operations.</p>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDE: FORM -->
+    <div class="login-form-side">
+      <div class="box">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+
+        <div class="brand">
+          <span class="icon"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"
+              style="width: 2.2rem; height: 2.2rem; display: inline-block; vertical-align: middle;">
+              <circle cx="32" cy="32" r="6" fill="#cfac62" stroke="#8f7034" stroke-width="1.5" />
+              <circle cx="32" cy="32" r="3" fill="#110d0a" />
+              <path d="M28 28 L14 14 M36 28 L50 14 M28 36 L14 50 M36 36 L50 50" stroke="#cfac62" stroke-width="3"
+                stroke-linecap="round" />
+              <circle cx="14" cy="14" r="4" fill="#8f7034" />
+              <circle cx="50" cy="14" r="4" fill="#8f7034" />
+              <circle cx="14" cy="50" r="4" fill="#8f7034" />
+              <circle cx="50" cy="50" r="4" fill="#8f7034" />
+              <path d="M6 14 Q14 8 22 14 Q14 20 6 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+                stroke-width="1" />
+              <path d="M42 14 Q50 8 58 14 Q50 20 42 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+                stroke-width="1" />
+              <path d="M6 50 Q14 44 22 50 Q14 56 6 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+                stroke-width="1" />
+              <path d="M42 50 Q50 44 58 50 Q50 56 42 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+                stroke-width="1" />
+              <circle cx="32" cy="24" r="1.5" fill="#ff3b3b" />
+            </svg></span>
+          <h1>SECURE ACCESS</h1>
+          <p>Secure System Access</p>
+        </div>
+
+        <div class="tab-row">
+          <div class="tab active" id="tab-login" onclick="switchTab('login')">&#128274; Login</div>
+          <div class="tab" id="tab-signup" onclick="switchTab('signup')">&#128221; Sign Up</div>
+        </div>
+
+        <div class="form-wrap">
+
+          <!-- LOGIN PANEL -->
+          <div class="form-panel active" id="panel-login">
+            {% if error %}
+            <div class="alert alert-error">&#9888; {{ error }}</div>
+            {% endif %}
+            <form method="POST" action="/login">
+              <div class="form-group">
+                <label for="login-user">Username</label>
+                <div class="input-wrap">
+                  <span class="ico">&#128100;</span>
+                  <input type="text" id="login-user" name="username" placeholder="Enter username" required
+                    autocomplete="username" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="login-pass">Password</label>
+                <div class="input-wrap">
+                  <span class="ico">&#128274;</span>
+                  <input type="password" id="login-pass" name="password" placeholder="Enter password" required
+                    autocomplete="current-password" />
+                </div>
+              </div>
+              <button type="submit" class="btn-submit">&#128274;&nbsp; Login</button>
+            </form>
+            <div class="divider">or</div>
+            <button class="btn-google" onclick="googleSignIn()">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+              Continue with Google
+            </button>
+            <div class="hint">Don't have an account? <span onclick="switchTab('signup')">Sign Up</span></div>
+          </div>
+
+          <!-- SIGNUP PANEL -->
+          <div class="form-panel" id="panel-signup">
+            {% if signup_error %}
+            <div class="alert alert-error">&#9888; {{ signup_error }}</div>
+            {% endif %}
+            <form method="POST" action="/signup">
+              <div class="form-group">
+                <label for="signup-user">Username</label>
+                <div class="input-wrap">
+                  <span class="ico">&#128100;</span>
+                  <input type="text" id="signup-user" name="username" placeholder="Choose a username" required
+                    autocomplete="username" minlength="3" maxlength="30" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="signup-pass">Password</label>
+                <div class="input-wrap">
+                  <span class="ico">&#128274;</span>
+                  <input type="password" id="signup-pass" name="password" placeholder="Min 6 characters" required
+                    autocomplete="new-password" minlength="6" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="signup-confirm">Confirm Password</label>
+                <div class="input-wrap">
+                  <span class="ico">&#128275;</span>
+                  <input type="password" id="signup-confirm" name="confirm" placeholder="Re-enter password" required
+                    autocomplete="new-password" minlength="6" />
+                </div>
+              </div>
+              <button type="submit" class="btn-submit" onclick="return validateSignup()">
+                &#128221;&nbsp; Create Account
+              </button>
+            </form>
+            <div class="divider">or</div>
+            <button class="btn-google" onclick="googleSignIn()">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+              Continue with Google
+            </button>
+            <div class="hint">Already have an account? <span onclick="switchTab('login')">Login</span></div>
+          </div>
+
+        </div>
+
+        <footer>UAV Disaster Identification &amp; Alerting System &nbsp;|&nbsp; YOLOv8</footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      ['login', 'signup'].forEach(function (t) {
+        document.getElementById('panel-' + t).classList.toggle('active', t === tab);
+        document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      });
+      // Focus first input of active panel
+      var panel = document.getElementById('panel-' + tab);
+      var first = panel.querySelector('input');
+      if (first) first.focus();
+    }
+
+    function validateSignup() {
+      var pass = document.getElementById('signup-pass').value;
+      var confirm = document.getElementById('signup-confirm').value;
+      if (pass !== confirm) {
+        alert('Passwords do not match.');
+        return false;
+      }
+      if (pass.length < 6) {
+        alert('Password must be at least 6 characters.');
+        return false;
+      }
+      return true;
+    }
+
+    // Auto-focus login input on load
+    document.getElementById('login-user').focus();
+
+    // Google Sign-In - OAuth2 Redirect Flow
+    const GOOGLE_CLIENT_ID = '{{ google_client_id }}';
+
+    function googleSignIn() {
+      const redirectUri = 'http://localhost:5000/google_callback';
+      const url = 'https://accounts.google.com/o/oauth2/v2/auth?' +
+        'client_id=' + GOOGLE_CLIENT_ID +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
+        '&response_type=code' +
+        '&scope=' + encodeURIComponent('openid email profile') +
+        '&access_type=offline' +
+        '&prompt=select_account';
+      window.location.href = url;
+    }
+
+
+  </script>
+</body>
+
+</html>

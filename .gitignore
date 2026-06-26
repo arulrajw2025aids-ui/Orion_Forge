@@ -1,0 +1,5 @@
+.env
+uav_contacts.db
+phone_captured_images/
+__pycache__/
+*.pyc

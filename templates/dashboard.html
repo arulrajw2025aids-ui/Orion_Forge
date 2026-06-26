@@ -1,0 +1,3215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAV Disaster Detection System</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;500;700;900&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0b0b0e;
+      --bg-secondary: #121217;
+      --bg-card: rgba(22, 22, 28, 0.85);
+      --border-glow: rgba(140, 110, 80, 0.25);
+      --border-glow-active: rgba(207, 172, 98, 0.75);
+      --text-primary: #f1f5f9;
+      --text-secondary: #a89f91;
+      --neon-cyan: #cfac62;
+      /* Burnished Gold */
+      --neon-purple: #b91c1c;
+      /* Crimson Dragon Blood */
+      --bg-parchment: #f4ead4;
+      --text-parchment: #2c241a;
+      --border-parchment: #c8b18a;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Lora', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23cfac62" stroke-width="1.8" opacity="0.6" filter="url(%23goldGlow)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGrad)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23fff5e0" stroke-width="0.6" opacity="0.9"/></svg>') 0 0, auto;
+    }
+
+    a,
+    button,
+    .btn,
+    .tab-btn,
+    select,
+    option,
+    input,
+    textarea {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGradHover" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlowHover" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23f59e0b" stroke-width="1.8" opacity="0.8" filter="url(%23goldGlowHover)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGradHover)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23ffffff" stroke-width="0.6" opacity="0.95"/></svg>') 0 0, pointer;
+    }
+
+    /* Gilt Corner Brackets */
+    .corner-bracket {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      z-index: 5;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      opacity: 0.5;
+    }
+
+    .corner-tl {
+      top: 6px;
+      left: 6px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18V2h16M2 2l8 8M6 2h6M2 6v6M6 6h1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-tr {
+      top: 6px;
+      right: 6px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18V2H6M22 2l-8 8M18 2h-6M22 6v6M18 6h-1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-bl {
+      bottom: 6px;
+      left: 6px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v16h16M2 22l8-8M6 22h6M2 18v-6M6 18h1"/></svg>') no-repeat center/contain;
+    }
+
+    .corner-br {
+      bottom: 6px;
+      right: 6px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6v16H6M22 22l-8-8M18 22h-6M22 18v-6M18 18h-1"/></svg>') no-repeat center/contain;
+    }
+
+    .card:hover .corner-tl,
+    .stat-card:hover .corner-tl {
+      top: 3px;
+      left: 3px;
+      opacity: 1;
+      filter: drop-shadow(0 0 3px var(--neon-cyan));
+    }
+
+    .card:hover .corner-tr,
+    .stat-card:hover .corner-tr {
+      top: 3px;
+      right: 3px;
+      opacity: 1;
+      filter: drop-shadow(0 0 3px var(--neon-cyan));
+    }
+
+    .card:hover .corner-bl,
+    .stat-card:hover .corner-bl {
+      bottom: 3px;
+      left: 3px;
+      opacity: 1;
+      filter: drop-shadow(0 0 3px var(--neon-cyan));
+    }
+
+    .card:hover .corner-br,
+    .stat-card:hover .corner-br {
+      bottom: 3px;
+      right: 3px;
+      opacity: 1;
+      filter: drop-shadow(0 0 3px var(--neon-cyan));
+    }
+
+    /* Vignette and Drifting Particles */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, transparent 30%, rgba(7, 8, 10, 0.95) 100%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    .bg-embers {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      left: 50%;
+      background-image:
+        radial-gradient(circle, rgba(245, 158, 11, 0.12) 1px, transparent 1px),
+        radial-gradient(circle, rgba(185, 28, 28, 0.08) 1.5px, transparent 1.5px);
+      background-size: 80px 140px;
+      z-index: -1;
+      pointer-events: none;
+      animation: embers-float 25s linear infinite;
+    }
+
+    .bg-frost {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      right: 50%;
+      background-image:
+        radial-gradient(circle, rgba(56, 189, 248, 0.12) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
+      background-size: 100px 150px;
+      z-index: -1;
+      pointer-events: none;
+      animation: frost-float 30s linear infinite;
+    }
+
+    @keyframes embers-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 45px -280px;
+      }
+    }
+
+    @keyframes frost-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: -25px 300px;
+      }
+    }
+
+    .bg-glow-1,
+    .bg-glow-2,
+    .bg-glow-3 {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(130px);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.28;
+    }
+
+    .bg-glow-1 {
+      top: -10%;
+      left: -10%;
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 75%);
+      animation: bg-move-1 25s ease-in-out infinite alternate, firelight-flicker 4s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-2 {
+      bottom: -15%;
+      right: -15%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 75%);
+      animation: bg-move-2 30s ease-in-out infinite alternate, firelight-flicker 5s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-3 {
+      top: 35%;
+      left: 30%;
+      width: 35vw;
+      height: 35vw;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 75%);
+      animation: bg-move-3 22s ease-in-out infinite alternate, firelight-flicker 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes firelight-flicker {
+
+      0%,
+      100% {
+        opacity: 0.22;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    @keyframes bg-move-1 {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        transform: translate(8vw, 6vh) scale(1.15);
+      }
+    }
+
+    @keyframes bg-move-2 {
+      0% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      100% {
+        transform: translate(-6vw, -8vh) scale(1.1);
+      }
+    }
+
+    @keyframes bg-move-3 {
+      0% {
+        transform: translate(-5vw, -5vh) scale(0.95);
+      }
+
+      100% {
+        transform: translate(5vw, 6vh) scale(1.1);
+      }
+    }
+
+    /* NAVBAR */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 28px;
+      background: #0b0b0e;
+      border-bottom: 2px double var(--neon-cyan);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 5px var(--neon-cyan));
+    }
+
+    .logo-text {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.05rem;
+      font-weight: 900;
+      line-height: 1.25;
+      color: var(--text-primary);
+      letter-spacing: 1.5px;
+    }
+
+    .logo-text span {
+      color: var(--neon-cyan);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(22, 22, 28, 0.7);
+      border: 1.5px solid var(--neon-cyan);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      color: var(--neon-cyan);
+      font-weight: 700;
+      letter-spacing: 1px;
+      box-shadow: 0 0 6px rgba(207, 172, 98, 0.15);
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--neon-cyan);
+      animation: pulse-gold 1.5s infinite;
+      box-shadow: 0 0 8px var(--neon-cyan);
+    }
+
+    @keyframes pulse-gold {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(1.3);
+      }
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(22, 22, 28, 0.7);
+      border: 1px solid var(--border-glow);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .user-pill a {
+      color: var(--neon-purple);
+      text-decoration: none;
+      font-size: 0.75rem;
+      margin-left: 6px;
+      border-left: 1px solid rgba(207, 172, 98, 0.25);
+      padding-left: 10px;
+      font-weight: 700;
+      transition: color 0.2s;
+    }
+
+    .user-pill a:hover {
+      color: #ff5555;
+      text-shadow: 0 0 4px rgba(185, 28, 28, 0.3);
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      background: #0b0b0e;
+      border-bottom: 2px solid rgba(207, 172, 98, 0.25);
+      padding: 0 28px;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      padding: 14px 24px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.25s;
+    }
+
+    .tab-btn.active {
+      color: var(--neon-cyan);
+      border-bottom-color: var(--neon-cyan);
+      background: rgba(207, 172, 98, 0.08);
+      text-shadow: 0 0 6px rgba(207, 172, 98, 0.3);
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--neon-cyan);
+      background: rgba(207, 172, 98, 0.03);
+    }
+
+    /* WAX SEALS */
+    .wax-seal {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, #b91c1c 40%, #7f1d1d 95%);
+      color: #fff !important;
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 900;
+      border-radius: 48% 40% 50% 42% / 40% 50% 45% 48%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.5);
+      border: 1px solid #991b1b;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+      padding: 3px 8px;
+      min-width: 22px;
+      height: 22px;
+      font-size: 0.7rem;
+      line-height: 1;
+      vertical-align: middle;
+      transition: transform 0.2s;
+    }
+
+    .wax-seal:hover {
+      transform: scale(1.12);
+    }
+
+    /* BOOK TOME CONTAINER */
+    .book-container {
+      margin: 24px 28px 40px;
+      border-radius: 12px;
+      border: 8px solid #2b1b17;
+      border-left-width: 12px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+      background: var(--bg-parchment) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><filter id="paper"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feColorMatrix type="matrix" values="0.9 0 0 0 0  0 0.85 0 0 0  0 0 0.75 0 0  0 0 0 0.07 0"/></filter><rect width="100" height="100" filter="url(%23paper)" fill="none"/></svg>');
+      position: relative;
+      overflow: hidden;
+      min-height: 750px;
+      display: flex;
+    }
+
+    .book-spine {
+      width: 16px;
+      background: linear-gradient(to right, #110908, #2a1815 25%, #110908 50%, #2a1815 75%, #110908);
+      box-shadow: inset -2px 0 5px rgba(0, 0, 0, 0.5), inset 2px 0 5px rgba(0, 0, 0, 0.5);
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 15;
+    }
+
+    .book-pages {
+      flex: 1;
+      padding: 24px 28px 24px 40px;
+      /* Leave space for left spine binding */
+      position: relative;
+      perspective: 1600px;
+      min-height: 720px;
+    }
+
+    /* SLIDE STYLING & 3D TRANSITIONS */
+    .slide {
+      display: none;
+      width: 100%;
+      animation-duration: 0.8s;
+      animation-fill-mode: forwards;
+      animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      backface-visibility: hidden;
+    }
+
+    .slide.active {
+      display: block;
+    }
+
+    .slide.animating {
+      position: absolute;
+      top: 24px;
+      left: 40px;
+      width: calc(100% - 68px);
+      z-index: 10;
+    }
+
+    @keyframes pageTurnOut {
+      0% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+        transform-origin: left center;
+      }
+
+      100% {
+        transform: rotateY(-90deg) scale(0.96) skewY(-2.5deg);
+        opacity: 0;
+        transform-origin: left center;
+      }
+    }
+
+    @keyframes pageTurnIn {
+      0% {
+        transform: rotateY(90deg) scale(0.96) skewY(2.5deg);
+        opacity: 0;
+        transform-origin: left center;
+      }
+
+      100% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+        transform-origin: left center;
+      }
+    }
+
+    .slide.turn-out {
+      display: block;
+      animation-name: pageTurnOut;
+      pointer-events: none;
+    }
+
+    .slide.turn-in {
+      display: block;
+      animation-name: pageTurnIn;
+    }
+
+    /* CARDS */
+    .card {
+      background: rgba(253, 250, 242, 0.96);
+      border: 1px solid var(--border-parchment);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(44, 36, 26, 0.12);
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-parchment);
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--neon-purple);
+      background: rgba(200, 177, 138, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* LIVE UAV FEED */
+    .video-wrap {
+      position: relative;
+      background: #110d0a;
+      max-width: 480px;
+      border: 1px solid var(--border-parchment);
+      border-radius: 4px;
+      margin: 10px;
+    }
+
+    .video-wrap img {
+      width: 100%;
+      display: block;
+      height: 300px;
+      object-fit: cover;
+      opacity: 0.9;
+    }
+
+    .video-overlay {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(11, 11, 14, 0.85);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    /* STATS GRID */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .stat-card {
+      background: rgba(253, 250, 242, 0.96);
+      border: 1px solid var(--border-parchment);
+      border-radius: 8px;
+      padding: 18px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(44, 36, 26, 0.1);
+    }
+
+    .stat-val {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 2.1rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--neon-purple);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      color: var(--text-parchment);
+      margin-top: 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .badge-NONE {
+      background: rgba(16, 185, 129, 0.1);
+      color: #047857;
+      border: 1.5px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-MEDIUM {
+      background: rgba(245, 158, 11, 0.1);
+      color: #b45309;
+      border: 1.5px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-HIGH {
+      background: rgba(185, 28, 28, 0.1);
+      color: #b91c1c;
+      border: 1.5px solid rgba(185, 28, 28, 0.3);
+    }
+
+    /* MAP LAYOUT */
+    .gps-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 16px;
+    }
+
+    .map-info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      width: 100%;
+    }
+
+    .map-info-item {
+      background: rgba(253, 250, 242, 0.95);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--neon-cyan);
+      box-shadow: 0 2px 8px rgba(44, 36, 26, 0.08);
+      transition: all 0.25s;
+    }
+
+    .map-info-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(44, 36, 26, 0.14);
+    }
+
+    .map-info-item .label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      color: var(--text-parchment);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      opacity: 0.75;
+    }
+
+    .map-info-item .val {
+      font-family: 'Lora', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-parchment);
+      margin-top: 6px;
+    }
+
+    /* LEAFLET MAP ELEMENT */
+    #map {
+      height: 480px;
+      width: 100%;
+      border-radius: 8px;
+      border: 2px double var(--neon-cyan);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+      filter: sepia(0.85) hue-rotate(-12deg) contrast(1.18) brightness(0.92);
+      transition: filter 0.5s ease;
+    }
+
+    #map:hover {
+      filter: sepia(0.4) hue-rotate(-5deg) contrast(1.1) brightness(0.95);
+    }
+
+    /* ALERTS LOG */
+    .alerts-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .alerts-header-row h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-parchment);
+      letter-spacing: 1px;
+    }
+
+    .alert-count-badge {
+      display: inline-block;
+      background: radial-gradient(circle, #b91c1c 40%, #7f1d1d 95%);
+      color: #fff !important;
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 900;
+      border-radius: 48% 40% 50% 42% / 40% 50% 45% 48%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.5);
+      border: 1px solid #991b1b;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+      padding: 4px 12px;
+      font-size: 0.78rem;
+    }
+
+    .alerts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+    }
+
+    .alert-card {
+      background: rgba(253, 250, 242, 0.96);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border-parchment);
+      border-top: 4px solid var(--neon-cyan);
+      box-shadow: 0 3px 10px rgba(44, 36, 26, 0.08);
+      position: relative;
+      transition: all 0.25s;
+    }
+
+    .alert-card:hover {
+      box-shadow: 0 6px 20px rgba(136, 0, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .alert-card.HIGH {
+      border-top-color: var(--neon-purple);
+    }
+
+    .alert-card.MEDIUM {
+      border-top-color: #d97706;
+    }
+
+    .alert-card.NONE {
+      border-top-color: #10b981;
+    }
+
+    .alert-card .ac-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .alert-card .ac-humans {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: var(--text-parchment);
+      line-height: 1;
+    }
+
+    .alert-card .ac-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      color: var(--text-parchment);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+      opacity: 0.8;
+    }
+
+    .alert-card .ac-time {
+      font-size: 0.75rem;
+      color: var(--text-parchment);
+      margin-top: 8px;
+      opacity: 0.85;
+    }
+
+    .alert-card .ac-coords {
+      font-size: 0.72rem;
+      color: var(--text-parchment);
+      margin-top: 4px;
+      opacity: 0.75;
+    }
+
+    .alert-card .ac-location {
+      font-size: 0.75rem;
+      color: var(--text-parchment);
+      margin-top: 6px;
+      opacity: 0.85;
+      font-weight: 700;
+      border-top: 1px dashed rgba(44, 36, 26, 0.15);
+      padding-top: 6px;
+    }
+
+    .alert-card .ac-image-wrap {
+      margin-top: 10px;
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-parchment);
+      height: 140px;
+      cursor: pointer;
+    }
+
+    .alert-card .ac-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .alert-card .ac-image-wrap:hover .ac-image {
+      transform: scale(1.05);
+    }
+
+    .alert-card .ac-image-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 11, 14, 0.75);
+      color: #f1f5f9;
+      font-size: 0.68rem;
+      padding: 4px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      font-family: 'Cinzel', serif;
+      pointer-events: none;
+    }
+
+    .alert-card .ac-image-wrap:hover .ac-image-overlay {
+      opacity: 1;
+    }
+
+    .alert-card .ac-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      border-top: 1px dashed rgba(44, 36, 26, 0.15);
+      padding-top: 10px;
+    }
+
+    .alert-card .btn-card-action {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 0.68rem;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 700;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+      text-decoration: none;
+      border: 1px solid var(--border-parchment);
+      background: rgba(200, 177, 138, 0.15);
+      color: var(--text-parchment);
+      font-family: 'Cinzel', serif;
+      transition: all 0.2s;
+    }
+
+    .alert-card .btn-card-action:hover {
+      background: var(--neon-cyan);
+      color: #0b0b0e;
+      border-color: var(--neon-cyan);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+
+    .alert-card .btn-card-action.btn-delete:hover {
+      background: var(--neon-purple);
+      color: #f1f5f9;
+      border-color: var(--neon-purple);
+    }
+
+    /* IMAGE MODAL */
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      padding-top: 60px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(11, 11, 14, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.3s ease;
+    }
+
+    .image-modal-content {
+      margin: auto;
+      display: block;
+      max-width: 85%;
+      max-height: 75vh;
+      border: 2px solid var(--neon-cyan);
+      border-radius: 8px;
+      box-shadow: 0 0 25px rgba(207, 172, 98, 0.4);
+      animation: modal-zoom 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    @keyframes modal-zoom {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 25px;
+      right: 35px;
+      color: #f1f5f9;
+      font-size: 40px;
+      font-weight: bold;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+      color: var(--neon-cyan);
+      text-decoration: none;
+    }
+
+    #image-modal-caption {
+      margin: auto;
+      display: block;
+      width: 80%;
+      max-width: 700px;
+      text-align: center;
+      color: #a89f91;
+      padding: 15px 0;
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+    }
+
+    .profile-trigger {
+      transition: opacity 0.2s;
+    }
+    .profile-trigger:hover {
+      opacity: 0.85;
+    }
+    .profile-trigger:hover #user-display-name {
+      text-decoration: underline;
+      color: var(--neon-cyan);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-parchment);
+      padding: 40px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 1px;
+      opacity: 0.6;
+    }
+
+    /* MESSAGES LAYOUT */
+    .msg-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+    }
+
+    .form-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-parchment);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-parchment);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.45);
+      color: var(--text-parchment);
+      font-size: 0.88rem;
+      outline: none;
+      font-family: 'Lora', serif;
+      transition: all 0.25s;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: var(--neon-cyan);
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 8px rgba(207, 172, 98, 0.15);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 20px;
+      border: 1px solid #cfac62;
+      border-radius: 6px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.25s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #cfac62, #8f7034);
+      color: #0b0b0e;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      text-transform: uppercase;
+    }
+
+    .btn:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 5px 15px rgba(207, 172, 98, 0.35);
+      background: linear-gradient(135deg, #e5c583, #a68442);
+    }
+
+    .btn:active {
+      transform: translateY(0.5px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #cfac62, #8f7034);
+      color: #0b0b0e;
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+      border-color: #b91c1c;
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 0.72rem;
+    }
+
+    .btn-danger:hover {
+      box-shadow: 0 5px 15px rgba(185, 28, 28, 0.35);
+      background: linear-gradient(135deg, #cc2c2c, #931818);
+    }
+
+    .btn-send {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.88rem;
+    }
+
+    /* CONTACTS */
+    .contact-list {
+      margin-top: 10px;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--neon-cyan);
+      box-shadow: 0 2px 5px rgba(44, 36, 26, 0.05);
+      transition: all 0.2s;
+    }
+
+    .contact-row:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(44, 36, 26, 0.1);
+    }
+
+    .contact-row .c-name {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-parchment);
+      font-size: 0.82rem;
+    }
+
+    .contact-row .c-phone {
+      font-size: 0.75rem;
+      color: var(--text-parchment);
+      font-weight: 600;
+      opacity: 0.8;
+    }
+
+    /* ROLE BADGES */
+    .role-badge {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .role-rescue {
+      background: rgba(75, 85, 99, 0.1);
+      color: #374151;
+      border: 1px solid rgba(75, 85, 99, 0.3);
+    }
+
+    .role-victim {
+      background: rgba(185, 28, 28, 0.1);
+      color: #b91c1c;
+      border: 1px solid rgba(185, 28, 28, 0.3);
+    }
+
+    .role-volunteer {
+      background: rgba(16, 185, 129, 0.1);
+      color: #047857;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    /* MSG LOGS */
+    .msg-log {
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .msg-row {
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--neon-cyan);
+      box-shadow: 0 2px 5px rgba(44, 36, 26, 0.05);
+      transition: all 0.2s;
+    }
+
+    .msg-row:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(44, 36, 26, 0.1);
+    }
+
+    .msg-row .mr-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .msg-row .mr-to {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-parchment);
+      font-size: 0.82rem;
+    }
+
+    .msg-row .mr-time {
+      font-size: 0.7rem;
+      color: var(--text-parchment);
+      opacity: 0.8;
+    }
+
+    .msg-row .mr-text {
+      font-size: 0.82rem;
+      color: var(--text-parchment);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: radial-gradient(circle, #b91c1c 40%, #7f1d1d 95%);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      border: 1.5px solid var(--neon-cyan);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* RESOURCE INVENTORY */
+    .resource-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+    }
+
+    .resource-item {
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--neon-cyan);
+      box-shadow: 0 2px 5px rgba(44, 36, 26, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .resource-item:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(44, 36, 26, 0.1);
+    }
+
+    .resource-item.critical {
+      border-left-color: var(--neon-purple);
+      background: rgba(185, 28, 28, 0.04);
+    }
+
+    .resource-item.low {
+      border-left-color: #d97706;
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    .resource-item.ok {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .res-name {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-parchment);
+      font-size: 0.88rem;
+    }
+
+    .res-qty {
+      font-size: 0.75rem;
+      color: var(--text-parchment);
+      margin-top: 2px;
+      opacity: 0.85;
+    }
+
+    .res-bar-wrap {
+      width: 100px;
+      background: rgba(44, 36, 26, 0.1);
+      border-radius: 6px;
+      height: 8px;
+      margin-top: 6px;
+    }
+
+    .res-bar {
+      height: 8px;
+      border-radius: 6px;
+      transition: width 0.4s;
+    }
+
+    /* INCIDENTS */
+    .incident-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 20px;
+    }
+
+    .incident-row {
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-parchment);
+      border-left: 4px solid var(--neon-cyan);
+      box-shadow: 0 2px 5px rgba(44, 36, 26, 0.05);
+      transition: all 0.2s;
+    }
+
+    .incident-row:hover {
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 4px 10px rgba(44, 36, 26, 0.1);
+    }
+
+    .incident-row.P1 {
+      border-left-color: var(--neon-purple);
+      background: rgba(185, 28, 28, 0.03);
+    }
+
+    .incident-row.P2 {
+      border-left-color: #d97706;
+      background: rgba(245, 158, 11, 0.03);
+    }
+
+    .incident-row.P3 {
+      border-left-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.03);
+    }
+
+    .inc-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .inc-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-parchment);
+      font-size: 0.88rem;
+    }
+
+    .inc-type {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+    }
+
+    .inc-flood {
+      background: rgba(59, 130, 246, 0.1);
+      color: #1d4ed8;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .inc-fire {
+      background: rgba(185, 28, 28, 0.1);
+      color: #b91c1c;
+      border: 1px solid rgba(185, 28, 28, 0.3);
+    }
+
+    .inc-quake {
+      background: rgba(245, 158, 11, 0.1);
+      color: #b45309;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .inc-medical {
+      background: rgba(16, 185, 129, 0.1);
+      color: #047857;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .inc-other {
+      background: rgba(107, 114, 128, 0.1);
+      color: #374151;
+      border: 1px solid rgba(107, 114, 128, 0.3);
+    }
+
+    .inc-status {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .status-active {
+      background: rgba(185, 28, 28, 0.15);
+      color: #b91c1c;
+    }
+
+    .status-progress {
+      background: rgba(245, 158, 11, 0.15);
+      color: #b45309;
+    }
+
+    .status-resolved {
+      background: rgba(16, 185, 129, 0.15);
+      color: #047857;
+    }
+
+    .inc-meta {
+      font-size: 0.72rem;
+      color: var(--text-parchment);
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+
+    /* CHARTS */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      flex: 1;
+    }
+
+    /* SCROLLBARS */
+    .contact-list::-webkit-scrollbar,
+    .msg-log::-webkit-scrollbar,
+    #resource-list::-webkit-scrollbar,
+    #incident-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .contact-list::-webkit-scrollbar-track,
+    .msg-log::-webkit-scrollbar-track,
+    #resource-list::-webkit-scrollbar-track,
+    #incident-list::-webkit-scrollbar-track {
+      background: rgba(44, 36, 26, 0.05);
+      border-radius: 3px;
+    }
+
+    .contact-list::-webkit-scrollbar-thumb,
+    .msg-log::-webkit-scrollbar-thumb,
+    #resource-list::-webkit-scrollbar-thumb,
+    #incident-list::-webkit-scrollbar-thumb {
+      background: var(--border-parchment);
+      border-radius: 3px;
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 18px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-top: 2px double var(--neon-cyan);
+      margin-top: auto;
+      background: #0b0b0e;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+    }
+
+    @media (max-width: 900px) {
+      .book-container {
+        flex-direction: column;
+        margin: 12px 14px 20px;
+      }
+
+      .book-spine {
+        display: none;
+      }
+
+      .book-pages {
+        padding: 16px;
+      }
+
+      .msg-layout,
+      .resource-grid,
+      .incident-grid,
+      .charts-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Floating Shifting Firelight Elements -->
+  <div class="bg-embers"></div>
+  <div class="bg-frost"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="bg-glow-3"></div>
+
+  <nav class="navbar">
+    <a href="#home" class="logo">
+      <span class="logo-icon"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"
+          style="width: 2rem; height: 2rem; display: inline-block; vertical-align: middle;">
+          <circle cx="32" cy="32" r="6" fill="#cfac62" stroke="#8f7034" stroke-width="1.5" />
+          <circle cx="32" cy="32" r="3" fill="#110d0a" />
+          <path d="M28 28 L14 14 M36 28 L50 14 M28 36 L14 50 M36 36 L50 50" stroke="#cfac62" stroke-width="3"
+            stroke-linecap="round" />
+          <circle cx="14" cy="14" r="4" fill="#8f7034" />
+          <circle cx="50" cy="14" r="4" fill="#8f7034" />
+          <circle cx="14" cy="50" r="4" fill="#8f7034" />
+          <circle cx="50" cy="50" r="4" fill="#8f7034" />
+          <path d="M6 14 Q14 8 22 14 Q14 20 6 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1" />
+          <path d="M42 14 Q50 8 58 14 Q50 20 42 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+            stroke-width="1" />
+          <path d="M6 50 Q14 44 22 50 Q14 56 6 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+            stroke-width="1" />
+          <path d="M42 50 Q50 44 58 50 Q50 56 42 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62"
+            stroke-width="1" />
+          <circle cx="32" cy="24" r="1.5" fill="#ff3b3b" />
+        </svg></span>
+      <div class="logo-text">UAV DISASTER<br><span>DETECTION</span></div>
+    </a>
+
+    <div style="display:flex;align-items:center;gap:14px">
+      <button onclick="window.location.href='/'" class="btn"
+        style="padding:6px 16px;border-radius:20px;font-size:0.75rem">&#9974; Go to Home</button>
+      <div class="status-pill">
+        <div class="pulse"></div> SYSTEM LIVE
+      </div>
+      <div class="user-pill">
+        <span class="profile-trigger" onclick="openProfileModal()" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="View Profile">
+          <span style="color:var(--neon-cyan)">&#128100;</span>
+          <span style="color:var(--text-primary);font-weight:600" id="user-display-name">{{ username }}</span>
+        </span>
+        <a href="/logout">Logout &#9211;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showSlide('messages', this)">&#128172; Messages</button>
+    <button class="tab-btn" onclick="showSlide('detection', this)">&#128247; Human Detection</button>
+    <button class="tab-btn" onclick="showSlide('gps', this)">&#128752; GPS Location</button>
+    <button class="tab-btn" onclick="showSlide('alerts', this)">&#128680; Alerts <span id="tab-alert-count"
+        class="wax-seal" style="margin-left:6px">0</span></button>
+    <button class="tab-btn" onclick="showSlide('analytics', this)">&#128200; Analytics</button>
+    <button class="tab-btn" onclick="showSlide('resources', this)">&#128230; Resources</button>
+    <button class="tab-btn" onclick="showSlide('incidents', this)">&#128221; Incidents</button>
+    <button class="tab-btn" onclick="showSlide('history', this)">&#128338; History</button>
+  </div>
+
+  <!-- BOOK TOME CONTAINER -->
+  <div class="book-container">
+    <div class="book-spine"></div>
+    <div class="book-pages">
+
+      <!-- SLIDE 1: HUMAN DETECTION -->
+      <div class="slide" id="slide-detection">
+        <div class="card" style="max-width:520px">
+          <div class="corner-bracket corner-tl"></div>
+          <div class="corner-bracket corner-tr"></div>
+          <div class="corner-bracket corner-bl"></div>
+          <div class="corner-bracket corner-br"></div>
+          <div class="card-header">&#128225; Live UAV Feed</div>
+          <div class="video-wrap">
+            <img id="feed" src="" alt="Live Feed" />
+            <div class="video-overlay" id="feed-time">--:--:--</div>
+          </div>
+        </div>
+        <div class="stats" style="max-width:520px">
+          <div class="stat-card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="stat-val" id="s-humans" style="color:#b91c1c">0</div>
+            <div class="stat-label">Humans Detected</div>
+          </div>
+          <div class="stat-card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="stat-val" id="s-severity" style="font-size:1.1rem;padding-top:8px">
+              <span class="badge badge-NONE">NONE</span>
+            </div>
+            <div class="stat-label">Severity Level</div>
+          </div>
+          <div class="stat-card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="stat-val" id="s-total" style="color:#cfac62">0</div>
+            <div class="stat-label">Total Detections</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: GPS MAP -->
+      <div class="slide" id="slide-gps">
+        <div class="card">
+          <div class="corner-bracket corner-tl"></div>
+          <div class="corner-bracket corner-tr"></div>
+          <div class="corner-bracket corner-bl"></div>
+          <div class="corner-bracket corner-br"></div>
+          <div class="card-header">
+            Disaster Location
+            <span style="margin-left:auto;font-size:0.75rem;color:#90a4ae">
+            </span>
+          </div>
+
+          <div class="gps-layout">
+
+            <!-- INFO BOXES -->
+            <div class="map-info-grid">
+              <div class="map-info-item">
+                <div class="label">Latitude</div>
+                <div class="val" id="g-lat">—</div>
+              </div>
+
+              <div class="map-info-item">
+                <div class="label">Longitude</div>
+                <div class="val" id="g-lon">—</div>
+              </div>
+
+              <div class="map-info-item">
+                <div class="label">Altitude (m)</div>
+                <div class="val" id="g-alt">—</div>
+              </div>
+
+              <div class="map-info-item">
+                <div class="label">Temperature (°C)</div>
+                <div class="val" id="g-temp">—</div>
+              </div>
+
+              <div class="map-info-item">
+                <div class="label">Wind Speed (km/h)</div>
+                <div class="val" id="g-wind">—</div>
+              </div>
+
+              <div class="map-info-item" style="border-left-color: var(--neon-purple);">
+                <div class="label">Last Alert</div>
+                <div class="val" id="g-time" style="font-size:1.05rem">—</div>
+              </div>
+            </div>
+
+            <!-- FULL WIDTH MAP -->
+            <div id="map"></div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: ALERTS -->
+      <div class="slide" id="slide-alerts">
+        <div class="alerts-header-row">
+          <h2>&#128680; Alert Log</h2>
+          <span class="alert-count-badge wax-seal" id="alert-count-badge">0 Alerts</span>
+        </div>
+        <div class="alerts-grid" id="alert-grid">
+          <div class="empty-state">No alerts yet. Monitoring...</div>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: MESSAGES -->
+      <div class="slide active" id="slide-messages">
+        <div class="msg-layout">
+
+          <!-- LEFT: Contact Manager + Compose -->
+          <div>
+            <!-- Add Contact -->
+            <div class="card" style="margin-bottom:16px">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#128101; Add Contact</div>
+              <div style="padding:14px">
+                <div class="form-group">
+                  <label class="form-label">Name</label>
+                  <input class="form-input" id="c-name" placeholder="Full name" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Phone</label>
+                  <input class="form-input" id="c-phone" placeholder="9876543210" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Role</label>
+                  <select class="form-select" id="c-role">
+                    <option>Rescue Team</option>
+                    <option>Volunteer</option>
+                    <option>Victim</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Address</label>
+                  <input class="form-input" id="c-address" placeholder="Location / area" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <input class="form-input" id="c-notes" placeholder="Any additional info" />
+                </div>
+                <button class="btn btn-primary" onclick="addContact()">&#43; Add Contact</button>
+              </div>
+            </div>
+
+            <!-- DB Stats -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+              <div
+                style="background:rgba(200, 177, 138, 0.15);border:1px solid var(--border-parchment);border-radius:10px;padding:10px;text-align:center;position:relative">
+                <div
+                  style="font-family:'Cinzel Decorative', serif;font-size:1.4rem;font-weight:900;color:var(--text-parchment)"
+                  id="db-rescue">0</div>
+                <div
+                  style="font-family:'Cinzel', serif;font-size:0.6rem;color:var(--text-parchment);text-transform:uppercase;letter-spacing:0.5px;opacity:0.8">
+                  Rescue Team</div>
+              </div>
+              <div
+                style="background:rgba(200, 177, 138, 0.15);border:1px solid var(--border-parchment);border-radius:10px;padding:10px;text-align:center;position:relative">
+                <div
+                  style="font-family:'Cinzel Decorative', serif;font-size:1.4rem;font-weight:900;color:var(--text-parchment)"
+                  id="db-volunteers">0</div>
+                <div
+                  style="font-family:'Cinzel', serif;font-size:0.6rem;color:var(--text-parchment);text-transform:uppercase;letter-spacing:0.5px;opacity:0.8">
+                  Volunteers</div>
+              </div>
+              <div
+                style="background:rgba(200, 177, 138, 0.15);border:1px solid var(--border-parchment);border-radius:10px;padding:10px;text-align:center;position:relative">
+                <div
+                  style="font-family:'Cinzel Decorative', serif;font-size:1.4rem;font-weight:900;color:var(--text-parchment)"
+                  id="db-victims">0</div>
+                <div
+                  style="font-family:'Cinzel', serif;font-size:0.6rem;color:var(--text-parchment);text-transform:uppercase;letter-spacing:0.5px;opacity:0.8">
+                  Victims</div>
+              </div>
+            </div>
+
+            <!-- Contact List -->
+            <div class="card">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#128222; Contacts <span id="contact-count" class="wax-seal"
+                  style="margin-left:auto">0</span>
+              </div>
+              <div style="padding:10px">
+                <div class="contact-list" id="contact-list">
+                  <div class="empty-state" style="padding:20px">No contacts added yet.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Compose + Message Log -->
+          <div>
+            <!-- Compose -->
+            <div class="card" style="margin-bottom:16px">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#9993; Send Disaster Message</div>
+              <div style="padding:14px">
+                <div class="form-group">
+                  <label class="form-label">Send To</label>
+                  <select class="form-select" id="msg-target">
+                    <option value="all">All (Victims + Volunteers + Rescue Team)</option>
+                    <option value="Rescue Team">Rescue Team Only</option>
+                    <option value="Volunteer">Volunteers Only</option>
+                    <option value="Victim">Victims Only</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Message</label>
+                  <textarea class="form-input" id="msg-text" rows="8"
+                    placeholder="Type your disaster alert message here... (no character limit)"
+                    style="resize:vertical;min-height:120px"></textarea>
+                  <div style="font-size:0.7rem;color:var(--text-parchment);margin-top:4px;opacity:0.8">&#128172; <span
+                      id="msg-char-count">0</span> characters</div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+                  <button class="btn btn-primary" style="font-size:0.75rem;padding:7px 12px"
+                    onclick="fillTemplate('rescue')">&#128663; Rescue En Route</button>
+                  <button class="btn btn-primary" style="font-size:0.75rem;padding:7px 12px"
+                    onclick="fillTemplate('evacuate')">&#128682; Evacuate Now</button>
+                  <button class="btn btn-primary" style="font-size:0.75rem;padding:7px 12px"
+                    onclick="fillTemplate('safe')">&#9989; Stay Safe</button>
+                  <button class="btn btn-primary" style="font-size:0.75rem;padding:7px 12px"
+                    onclick="fillTemplate('rescueteam')">&#128736; Deploy Rescue</button>
+                </div>
+                <button class="btn btn-send" onclick="sendMessage()">&#128172; Send Message</button>
+              </div>
+            </div>
+
+            <!-- Message Log -->
+            <div class="card">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#128203; Message Log <span id="msg-count" class="wax-seal"
+                  style="margin-left:auto">0</span>
+                <button class="btn btn-danger" style="margin-left:10px;padding:4px 10px;font-size:0.72rem"
+                  onclick="clearMessages()">&#128465; Clear Log</button>
+              </div>
+              <div style="padding:10px">
+                <div class="msg-log" id="msg-log">
+                  <div class="empty-state" style="padding:20px">No messages sent yet.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SLIDE 5: ANALYTICS -->
+      <div class="slide" id="slide-analytics">
+        <div class="charts-grid">
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#127849; Contact Roles Distribution</div>
+            <div style="padding:20px;display:flex;align-items:center;justify-content:center;height:320px">
+              <canvas id="pieChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#128202; Detection Severity Overview</div>
+            <div style="padding:20px;height:320px">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#128200; Humans Detected Over Time</div>
+            <div style="padding:20px;height:320px">
+              <canvas id="lineChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#128203; Messages Sent by Role</div>
+            <div style="padding:20px;display:flex;align-items:center;justify-content:center;height:320px">
+              <canvas id="doughnutChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: RESOURCE TRACKER -->
+      <div class="slide" id="slide-resources">
+        <div class="resource-grid">
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#128230; Add Resource</div>
+              <div style="padding:14px">
+                <div class="form-group">
+                  <label class="form-label">Resource Name</label>
+                  <input class="form-input" id="res-name" placeholder="e.g. Water Bottles" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Category</label>
+                  <select class="form-select" id="res-cat">
+                    <option value="Food">&#127860; Food</option>
+                    <option value="Water">&#128167; Water</option>
+                    <option value="Medical">&#128138; Medical</option>
+                    <option value="Shelter">&#127968; Shelter</option>
+                    <option value="Equipment">&#128295; Equipment</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Quantity Available</label>
+                  <input class="form-input" id="res-qty" type="number" placeholder="100" min="0" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Minimum Required</label>
+                  <input class="form-input" id="res-min" type="number" placeholder="20" min="0" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Location</label>
+                  <input class="form-input" id="res-loc" placeholder="e.g. Camp A, Warehouse 2" />
+                </div>
+                <button class="btn btn-primary" onclick="addResource()">&#43; Add Resource</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#128230; Resource Inventory <span id="res-count" class="wax-seal"
+                style="margin-left:auto">0</span>
+            </div>
+            <div style="padding:10px;max-height:520px;overflow-y:auto" id="resource-list">
+              <div class="empty-state" style="padding:40px">No resources added yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: INCIDENT LOG -->
+      <div class="slide" id="slide-incidents">
+        <div class="incident-grid">
+          <div>
+            <div class="card">
+              <div class="corner-bracket corner-tl"></div>
+              <div class="corner-bracket corner-tr"></div>
+              <div class="corner-bracket corner-bl"></div>
+              <div class="corner-bracket corner-br"></div>
+              <div class="card-header">&#128221; Log Incident</div>
+              <div style="padding:14px">
+                <div class="form-group">
+                  <label class="form-label">Incident Title</label>
+                  <input class="form-input" id="inc-title" placeholder="e.g. Building collapse at Zone 3" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Type</label>
+                  <select class="form-select" id="inc-type">
+                    <option value="flood">&#127754; Flood</option>
+                    <option value="fire">&#128293; Fire</option>
+                    <option value="quake">&#127755; Earthquake</option>
+                    <option value="medical">&#128138; Medical Emergency</option>
+                    <option value="other">&#9888; Other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select class="form-select" id="inc-priority">
+                    <option value="P1">&#128308; P1 — Critical</option>
+                    <option value="P2">&#128992; P2 — High</option>
+                    <option value="P3">&#128994; P3 — Medium</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Location</label>
+                  <input class="form-input" id="inc-loc" placeholder="Zone / Area / Coordinates" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-input" id="inc-desc" rows="3"
+                    placeholder="Brief description of the incident..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="addIncident()">&#128221; Log Incident</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="corner-bracket corner-tl"></div>
+            <div class="corner-bracket corner-tr"></div>
+            <div class="corner-bracket corner-bl"></div>
+            <div class="corner-bracket corner-br"></div>
+            <div class="card-header">&#128221; Incident Log <span id="inc-count" class="wax-seal"
+                style="margin-left:auto">0</span>
+            </div>
+            <div style="padding:10px;max-height:520px;overflow-y:auto" id="incident-list">
+              <div class="empty-state" style="padding:40px">No incidents logged yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 8: INCIDENT HISTORY -->
+      <div class="slide" id="slide-history">
+        <div class="card">
+          <div class="corner-bracket corner-tl"></div>
+          <div class="corner-bracket corner-tr"></div>
+          <div class="corner-bracket corner-bl"></div>
+          <div class="corner-bracket corner-br"></div>
+          <div class="card-header">&#128338; Resolved Incident History <span id="history-count" class="wax-seal" style="margin-left:auto">0</span>
+          </div>
+          <div style="padding:20px">
+            <div style="max-height:520px;overflow-y:auto" id="history-list">
+              <div class="empty-state" style="padding:40px">No resolved incidents in history yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Modal for viewing full captured images -->
+  <div id="image-modal" class="image-modal" onclick="closeImageModal()">
+    <span class="close-modal">&times;</span>
+    <img class="image-modal-content" id="modal-img">
+    <div id="image-modal-caption"></div>
+  </div>
+
+  <!-- Modal for viewing and editing user profile settings -->
+  <div id="profile-modal" class="image-modal" onclick="if(event.target === this) closeProfileModal()">
+    <div class="profile-modal-content card" style="max-width: 500px; margin: 80px auto; padding: 20px; border: 2px solid var(--neon-cyan); border-radius: 8px; background: var(--bg-parchment) url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;100&quot; height=&quot;100&quot; viewBox=&quot;0 0 100 100&quot;><filter id=&quot;paper&quot;><feTurbulence type=&quot;fractalNoise&quot; baseFrequency=&quot;0.04&quot; numOctaves=&quot;3&quot; result=&quot;noise&quot;/><feColorMatrix type=&quot;matrix&quot; values=&quot;0.9 0 0 0 0  0 0.85 0 0 0  0 0 0.75 0 0  0 0 0 0.07 0&quot;/></filter><rect width=&quot;100&quot; height=&quot;100&quot; filter=&quot;url(%23paper)&quot; fill=&quot;none&quot;/></svg>'); color: var(--text-parchment); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div class="corner-bracket corner-tl"></div>
+      <div class="corner-bracket corner-tr"></div>
+      <div class="corner-bracket corner-bl"></div>
+      <div class="corner-bracket corner-br"></div>
+      
+      <!-- Top Right Edit Button (styled matching the parchment look) -->
+      <button id="prof-edit-top-btn" onclick="setProfileEditMode(true)" style="position: absolute; top: 16px; right: 50px; background: none; border: none; color: var(--text-parchment); cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 4px; z-index: 10; font-family: 'Cinzel', serif; font-weight: 700; transition: all 0.2s;" title="Edit Profile">&#9998; Edit</button>
+      
+      <span class="close-modal" onclick="closeProfileModal()" style="color: var(--text-parchment); font-size: 28px; top: 12px; right: 18px; position: absolute; z-index: 10;">&times;</span>
+      
+      <h2 style="font-family: 'Cinzel Decorative', serif; border-bottom: 2px double var(--border-parchment); padding-bottom: 8px; margin-bottom: 20px; font-size: 1.4rem; text-align: center; color: var(--text-parchment)">&#128100; Profile Details</h2>
+      
+      <div style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Username</label>
+          <div id="view-username" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-username" disabled style="display: none; background: rgba(0,0,0,0.05); color: rgba(44, 36, 26, 0.6); cursor: not-allowed; font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px;" />
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Full Name</label>
+          <div id="view-name" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-name" disabled placeholder="E.g. Captain Ranjith" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Email Address</label>
+          <div id="view-email" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-email" type="email" disabled placeholder="name@domain.com" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Phone Number</label>
+          <div id="view-phone" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-phone" disabled placeholder="9876543210" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Designation</label>
+          <div id="view-designation" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-designation" disabled placeholder="E.g. Search & Rescue Lead" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Role Type</label>
+          <div id="view-role" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <select class="form-select" id="prof-role" disabled style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;">
+            <option value="common user">&#128100; Common User</option>
+            <option value="volunteer">&#129489;&#8205;&#129309; Volunteer</option>
+            <option value="victim">&#128546; Victim</option>
+            <option value="rescue member">&#128736; Rescue Member</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Address (Optional)</label>
+          <div id="view-address" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500; white-space: pre-wrap;"></div>
+          <textarea class="form-input" id="prof-address" disabled placeholder="Residential or base camp address..." rows="2" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; resize: vertical; cursor: not-allowed;"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="prof-edit-btn" onclick="setProfileEditMode(true)" style="width: 100%; justify-content: center; margin-top: 10px; font-size: 0.85rem;">&#9998; Edit Profile</button>
+
+        <div id="prof-save-actions" style="display: none; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-primary" onclick="saveProfile()" style="flex: 1; justify-content: center; font-size: 0.85rem;">&#128190; Save Profile</button>
+          <button class="btn btn-outline" onclick="setProfileEditMode(false)" style="flex: 1; justify-content: center; font-size: 0.85rem; border: 1px solid var(--border-parchment); color: var(--text-parchment)">&#10005; Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>UAV Disaster Identification &amp; Alerting System &nbsp;|&nbsp; YOLOv8 Detection &nbsp;|&nbsp; Flask Backend
+  </footer>
+
+  <script>
+    let audioCtx = null;
+
+    function playPageFlipSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const bufferSize = audioCtx.sampleRate * 0.5;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.Q.setValueAtTime(4, now);
+        filter.frequency.setValueAtTime(800, now);
+        filter.frequency.exponentialRampToValueAtTime(2200, now + 0.15);
+        filter.frequency.exponentialRampToValueAtTime(1000, now + 0.4);
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + 0.08);
+        gain.gain.linearRampToValueAtTime(0.02, now + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(80, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+        oscGain.gain.setValueAtTime(0, now);
+        oscGain.gain.linearRampToValueAtTime(0.12, now + 0.12);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.connect(oscGain);
+        oscGain.connect(audioCtx.destination);
+        noise.start(now);
+        osc.start(now);
+        noise.stop(now + 0.5);
+        osc.stop(now + 0.5);
+      } catch (e) {
+        console.warn("AudioContext flip block:", e);
+      }
+    }
+
+
+
+    function showSlide(name, btn) {
+      const currentSlide = document.querySelector('.slide.active');
+      const targetSlide = document.getElementById('slide-' + name);
+      const currentBtn = document.querySelector('.tab-btn.active');
+
+      if (currentSlide === targetSlide) return;
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      playPageFlipSound();
+
+      if (currentSlide) {
+        currentSlide.classList.add('animating', 'turn-out');
+        currentSlide.classList.remove('active');
+
+        targetSlide.classList.add('animating', 'turn-in', 'active');
+
+        setTimeout(() => {
+          currentSlide.classList.remove('animating', 'turn-out');
+          targetSlide.classList.remove('animating', 'turn-in');
+        }, 800);
+      } else {
+        targetSlide.classList.add('active');
+      }
+
+      if (name === 'gps' && map) setTimeout(() => map.invalidateSize(), 100);
+      if (name === 'analytics') {
+        if (!pieChart) initCharts();
+        else updateCharts();
+      }
+    }
+
+
+
+    function severityClass(s) {
+      return { HIGH: 'badge-HIGH', MEDIUM: 'badge-MEDIUM', NONE: 'badge-NONE' }[s] || 'badge-NONE';
+    }
+
+    async function updateStatus() {
+      try {
+        const d = await fetch('/status').then(r => r.json());
+        document.getElementById('s-humans').textContent = d.human_count;
+        document.getElementById('s-severity').innerHTML =
+          `<span class="badge ${severityClass(d.severity)}">${d.severity}</span>`;
+        document.getElementById('s-total').textContent = d.total_detections;
+        document.getElementById('g-lat').textContent = d.gps.latitude || '11.1271';
+        document.getElementById('g-lon').textContent = d.gps.longitude || '78.6569';
+        document.getElementById('g-alt').textContent = d.gps.altitude ? d.gps.altitude + ' m' : '320 m';
+        document.getElementById('g-temp').textContent = d.gps.weather ? d.gps.weather.temp : '34°C';
+        document.getElementById('g-wind').textContent = d.gps.weather ? d.gps.weather.wind : '12 km/h';
+        document.getElementById('g-time').textContent = d.last_alert_time || 'Fire Detected';
+        document.getElementById('tab-alert-count').textContent = d.alert_count;
+        document.getElementById('alert-count-badge').textContent = d.alert_count + ' Alerts';
+        if (d.gps.latitude && d.gps.longitude)
+          updateMap(d.gps.latitude, d.gps.longitude, d.gps.altitude, d.last_alert_time, d.human_count, d.severity);
+      } catch (e) { }
+    }
+
+    let lastAlertTimestamp = null;
+
+    function playAlertSound() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const playBeep = (time, freq) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0, time);
+          gain.gain.linearRampToValueAtTime(0.15, time + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + 0.4);
+        };
+        playBeep(now, 880);
+        playBeep(now + 0.15, 880);
+      } catch (e) {
+        console.warn("AudioContext alert sound block:", e);
+      }
+    }
+
+    function playVoiceAlert(text) {
+      if ('speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          const voices = window.speechSynthesis.getVoices();
+          const voice = voices.find(v => v.lang.startsWith('en-') && v.name.toLowerCase().includes('google'))
+                     || voices.find(v => v.lang.startsWith('en-'))
+                     || voices[0];
+          if (voice) utterance.voice = voice;
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          console.warn("Speech synthesis error:", e);
+        }
+      }
+    }
+
+    function setProfileEditMode(enabled) {
+      const fieldIds = ['prof-name', 'prof-email', 'prof-phone', 'prof-designation', 'prof-role', 'prof-address'];
+      
+      // If turning off edit mode, populate the view spans with current input values
+      if (!enabled) {
+        document.getElementById('view-username').textContent = document.getElementById('prof-username').value;
+        document.getElementById('view-name').textContent = document.getElementById('prof-name').value || '—';
+        document.getElementById('view-email').textContent = document.getElementById('prof-email').value || '—';
+        document.getElementById('view-phone').textContent = document.getElementById('prof-phone').value || '—';
+        document.getElementById('view-designation').textContent = document.getElementById('prof-designation').value || '—';
+        
+        const roleSelect = document.getElementById('prof-role');
+        document.getElementById('view-role').textContent = roleSelect.options[roleSelect.selectedIndex]?.text || '—';
+        
+        document.getElementById('view-address').textContent = document.getElementById('prof-address').value || '—';
+      }
+
+      // Toggle display of view elements vs edit inputs
+      const viewIds = ['view-username', 'view-name', 'view-email', 'view-phone', 'view-designation', 'view-role', 'view-address'];
+      viewIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.display = enabled ? 'none' : 'block';
+        }
+      });
+
+      // Other edit inputs
+      fieldIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+          if (enabled) {
+            input.removeAttribute('disabled');
+            input.style.display = 'block';
+            input.style.background = 'rgba(255, 255, 255, 0.45)';
+            input.style.cursor = 'text';
+          } else {
+            input.setAttribute('disabled', 'true');
+            input.style.display = 'none';
+            input.style.background = 'rgba(0,0,0,0.05)';
+            input.style.cursor = 'not-allowed';
+          }
+        }
+      });
+
+      // Special handling for username: it is always displayed as text and never editable
+      const userEditInput = document.getElementById('prof-username');
+      if (userEditInput) userEditInput.style.display = 'none';
+      const viewUser = document.getElementById('view-username');
+      if (viewUser) viewUser.style.display = 'block';
+
+      // Toggle button visibility
+      const editBtn = document.getElementById('prof-edit-btn');
+      const editTopBtn = document.getElementById('prof-edit-top-btn');
+      const saveActions = document.getElementById('prof-save-actions');
+      if (enabled) {
+        if (editBtn) editBtn.style.display = 'none';
+        if (editTopBtn) editTopBtn.style.display = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+      } else {
+        if (editBtn) editBtn.style.display = 'block';
+        if (editTopBtn) editTopBtn.style.display = 'inline-flex';
+        if (saveActions) saveActions.style.display = 'none';
+      }
+    }
+
+    function getDefaultDesignation(role) {
+      if (role === 'common user') return 'Citizen / Community Member';
+      if (role === 'volunteer') return 'Community Responder';
+      if (role === 'victim') return 'Disaster Affected Person';
+      if (role === 'rescue member') return 'UAV Operations & Rescue Officer';
+      return 'Citizen / Community Member';
+    }
+
+    async function openProfileModal() {
+      showToast('Fetching profile details...');
+      try {
+        const p = await fetch('/profile').then(r => r.json());
+        if (p.error) {
+          showToast('Failed to load profile.');
+          return;
+        }
+        document.getElementById('prof-username').value = p.username || '';
+        document.getElementById('prof-name').value = p.name || '';
+        document.getElementById('prof-email').value = p.email || '';
+        document.getElementById('prof-phone').value = p.phone || '';
+        
+        const role = p.role || 'common user';
+        document.getElementById('prof-role').value = role;
+        
+        let designation = p.designation || '';
+        if (!designation) {
+          designation = getDefaultDesignation(role);
+        }
+        document.getElementById('prof-designation').value = designation;
+        
+        document.getElementById('prof-address').value = p.address || '';
+        
+        // Start in read-only View Mode (will populate view elements)
+        setProfileEditMode(false);
+        document.getElementById('profile-modal').style.display = 'block';
+      } catch (e) {
+        showToast('Error connecting to server.');
+      }
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').style.display = 'none';
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('prof-name').value.trim();
+      const email = document.getElementById('prof-email').value.trim();
+      const phone = document.getElementById('prof-phone').value.trim();
+      const designation = document.getElementById('prof-designation').value.trim();
+      const role = document.getElementById('prof-role').value;
+      const address = document.getElementById('prof-address').value.trim();
+      
+      showToast('Saving profile...');
+      try {
+        const res = await fetch('/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, designation, role, address })
+        }).then(r => r.json());
+        
+        if (res.status === 'success') {
+          showToast('Profile updated successfully!');
+          if (name) {
+            document.getElementById('user-display-name').textContent = name;
+          } else {
+            document.getElementById('user-display-name').textContent = document.getElementById('prof-username').value;
+          }
+          setProfileEditMode(false);
+          closeProfileModal();
+        } else {
+          showToast('Failed: ' + (res.message || 'Unknown error'));
+        }
+      } catch (e) {
+        showToast('Error saving profile settings.');
+      }
+    }
+
+    // Auto-update designation when selecting a role type
+    const profRoleSelect = document.getElementById('prof-role');
+    if (profRoleSelect) {
+      profRoleSelect.addEventListener('change', () => {
+        const role = profRoleSelect.value;
+        const designationInput = document.getElementById('prof-designation');
+        if (designationInput) {
+          designationInput.value = getDefaultDesignation(role);
+        }
+      });
+    }
+
+    function openImageModal(src, captionText) {
+      document.getElementById("image-modal").style.display = "block";
+      document.getElementById("modal-img").src = src;
+      document.getElementById("image-modal-caption").textContent = captionText || "";
+    }
+
+    function closeImageModal() {
+      document.getElementById("image-modal").style.display = "none";
+    }
+
+    function showMapLocation(lat, lon, humans, sev, time, location) {
+      const gpsTabBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.includes('GPS'));
+      if (gpsTabBtn) {
+        showSlide('gps', gpsTabBtn);
+      } else {
+        showSlide('gps', document.querySelector('[onclick*="showSlide(\'gps\'"]'));
+      }
+      
+      setTimeout(() => {
+        if (!lat || !lon) return;
+        updateMap(lat, lon, null, time, humans, sev);
+        if (map) {
+          L.popup()
+            .setLatLng([lat, lon])
+            .setContent(`<b>🚨 Human Detected Here</b><br>Location: ${location || 'Natural Disaster Zone'}<br>${time}`)
+            .openOn(map);
+        }
+      }, 500);
+    }
+
+    function deployRescueFromAlert(location, lat, lon) {
+      const msgTabBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.includes('Messages'));
+      if (msgTabBtn) {
+        showSlide('messages', msgTabBtn);
+      } else {
+        showSlide('messages', document.querySelector('[onclick*="showSlide(\'messages\'"]'));
+      }
+      const text = `DEPLOY ORDER: Human presence confirmed at ${location} (Coords: ${lat}, ${lon}). Proceed immediately for rescue operation. UAV surveillance active.`;
+      document.getElementById('msg-text').value = text;
+      
+      const targetSelect = document.getElementById('msg-target');
+      if (targetSelect) {
+        for (let option of targetSelect.options) {
+          if (option.value.toLowerCase() === 'rescue team' || option.value.toLowerCase().includes('rescue')) {
+            targetSelect.value = option.value;
+            break;
+          }
+        }
+      }
+      showToast('Pre-populated Deploy Order template for rescue team.');
+    }
+
+    async function updateAlerts() {
+      try {
+        const alerts = await fetch('/alerts').then(r => r.json());
+        const grid = document.getElementById('alert-grid');
+        if (!alerts.length) {
+          grid.innerHTML = '<div class="empty-state">No alerts yet. Monitoring...</div>';
+          return;
+        }
+
+        // Trigger notifications for new alerts
+        const newest = alerts[0];
+        if (lastAlertTimestamp && newest.timestamp !== lastAlertTimestamp) {
+          playAlertSound();
+          const newestLat = newest.gps_location?.latitude ?? newest.gps?.latitude ?? '';
+          const newestLon = newest.gps_location?.longitude ?? newest.gps?.longitude ?? '';
+          const locStr = newest.location || (newestLat && newestLon ? `${newestLat}, ${newestLon}` : 'Unknown location');
+          showToast(`🚨 NEW DETECTION: ${newest.humans_detected ?? newest.humans ?? 1} human(s) at ${locStr}!`);
+          
+          // Construct and trigger Text-to-Speech alert warning
+          const humansCount = newest.humans_detected ?? newest.humans ?? 1;
+          const label = humansCount === 1 ? "human" : "humans";
+          const alertMsg = `Warning: ${humansCount} ${label} detected at ${locStr}.`;
+          
+          // Delay speech slightly to let the beep sound finish playing
+          setTimeout(() => playVoiceAlert(alertMsg), 600);
+        }
+        lastAlertTimestamp = newest.timestamp;
+
+        grid.innerHTML = alerts.map(a => {
+          const lat = a.gps_location?.latitude ?? a.gps?.latitude ?? 0;
+          const lon = a.gps_location?.longitude ?? a.gps?.longitude ?? 0;
+          const humans = a.humans_detected ?? a.humans ?? 0;
+          const severity = a.severity || 'NONE';
+          const locName = a.location || 'Natural Disaster Zone';
+          const imgHtml = a.image ? `
+            <div class="ac-image-wrap">
+              <img src="/${a.image}" alt="Captured Human" class="ac-image" onclick="event.stopPropagation(); openImageModal(this.src, '${locName.replace(/'/g, "\\'")} - ${a.timestamp}')" />
+              <div class="ac-image-overlay"><span>&#128269;</span> Click to View Image</div>
+            </div>
+          ` : '';
+
+          return `
+          <div class="alert-card ${severity}">
+            <div class="ac-top">
+              <div>
+                <div class="ac-humans">${humans}</div>
+                <div class="ac-label">Human(s) Detected</div>
+              </div>
+              <span class="badge ${severityClass(severity)}">${severity}</span>
+            </div>
+            <div class="ac-time">&#128336; ${a.timestamp}</div>
+            ${a.location ? `<div class="ac-location">&#128205; <b>Location:</b> ${a.location}</div>` : ''}
+            <div class="ac-coords">&#128752; Coords: ${lat !== 0 ? lat.toFixed(6) : '—'}, ${lon !== 0 ? lon.toFixed(6) : '—'} &nbsp;|&nbsp; Alt: ${a.gps_location?.altitude ?? a.gps?.altitude ?? '—'} m</div>
+            ${imgHtml}
+            <div class="ac-actions">
+              <button class="btn-card-action" onclick="showMapLocation(${lat}, ${lon}, ${humans}, '${severity}', '${a.timestamp}', '${locName.replace(/'/g, "\\'")}')">&#128752; Show on Map</button>
+              <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="btn-card-action">&#127758; Google Maps</a>
+              <button class="btn-card-action" onclick="deployRescueFromAlert('${locName.replace(/'/g, "\\'")}', ${lat}, ${lon})">&#128172; Deploy Rescue</button>
+              <button class="btn-card-action btn-delete" onclick="deleteAlert(${a.id || 'null'}, '${a.timestamp}')">&#128465; Delete</button>
+            </div>
+          </div>`;
+        }).join('');
+
+        // Clear existing map markers to prevent duplicates stacking
+        if (map) {
+          alertMarkers.forEach(m => map.removeLayer(m));
+          alertMarkers = [];
+          
+          // Plot all alert markers on map
+          alerts.forEach(a => {
+            const lat = a.gps?.latitude ?? a.gps_location?.latitude;
+            const lon = a.gps?.longitude ?? a.gps_location?.longitude;
+            if (lat && lon) {
+              addAlertMarker(lat, lon, a.humans ?? a.humans_detected, a.severity, a.timestamp, a.location);
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error updating alerts:", e);
+      }
+    }
+
+    function updateClock() {
+      document.getElementById('feed-time').textContent = new Date().toLocaleTimeString();
+    }
+
+    async function deleteAlert(id, timestamp) {
+      if (!confirm("Are you sure you want to delete this alert?")) {
+        return;
+      }
+      try {
+        const response = await fetch('/delete_alert', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: id, timestamp: timestamp })
+        }).then(r => r.json());
+
+        if (response.status === 'success') {
+          showToast('Alert deleted successfully.');
+          updateAlerts(); // refresh alert grid
+        } else {
+          showToast('Error: ' + response.message);
+        }
+      } catch (e) {
+        console.error("Error deleting alert:", e);
+        showToast('Failed to delete alert.');
+      }
+    }
+
+    // ── MAP ──
+    var map = null;
+    var marker = null;
+    var alertMarkers = [];
+
+    function initMap(lat, lon) {
+      if (map) return;
+      map = L.map('map').setView([lat, lon], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    }
+
+    var uavIcon = L.divIcon({
+      html: '<div style="background:#ff3b3b;border:3px solid #fff;border-radius:50%;width:18px;height:18px;box-shadow:0 0 8px #ff3b3b"></div>',
+      iconSize: [18, 18], iconAnchor: [9, 9], className: ''
+    });
+
+    function updateMap(lat, lon, alt, time, humans, sev) {
+      if (!lat || !lon) return;
+      if (!map) initMap(lat, lon);
+      // Move/create live UAV marker
+      if (marker) {
+        marker.setLatLng([lat, lon]);
+      } else {
+        marker = L.marker([lat, lon], { icon: uavIcon }).addTo(map);
+      }
+      marker.bindPopup(
+        '<b><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 1.1rem; height: 1.1rem; display: inline-block; vertical-align: middle; margin-right: 4px;"><circle cx="32" cy="32" r="6" fill=\'#cfac62\' stroke=\'#8f7034\' stroke-width=\'1.5\'/><circle cx="32" cy="32" r="3" fill=\'#110d0a\'/><path d=\'M28 28 L14 14 M36 28 L50 14 M28 36 L14 50 M36 36 L50 50\' stroke=\'#cfac62\' stroke-width=\'3\' stroke-linecap=\'round\'/><circle cx=\'14\' cy=\'14\' r=\'4\' fill=\'#8f7034\'/><circle cx=\'50\' cy=\'14\' r=\'4\' fill=\'#8f7034\'/><circle cx=\'14\' cy=\'50\' r=\'4\' fill=\'#8f7034\'/><circle cx=\'50\' cy=\'50\' r=\'4\' fill=\'#8f7034\'/><path d=\'M6 14 Q14 8 22 14 Q14 20 6 14 Z\' fill=\'rgba(207, 172, 98, 0.35)\' stroke=\'#cfac62\' stroke-width=\'1\'/><path d=\'M42 14 Q50 8 58 14 Q50 20 42 14 Z\' fill=\'rgba(207, 172, 98, 0.35)\' stroke=\'#cfac62\' stroke-width=\'1\'/><path d=\'M6 50 Q14 44 22 50 Q14 56 6 50 Z\' fill=\'rgba(207, 172, 98, 0.35)\' stroke=\'#cfac62\' stroke-width=\'1\'/><path d=\'M42 50 Q50 44 58 50 Q50 56 42 50 Z\' fill=\'rgba(207, 172, 98, 0.35)\' stroke=\'#cfac62\' stroke-width=\'1\'/><circle cx=\'32\' cy=\'24\' r=\'1.5\' fill=\'#ff3b3b\'/></svg> UAV Detection</b><br>' +
+        'Humans: <b>' + humans + '</b> | Severity: <b>' + sev + '</b><br>' +
+        'Alt: ' + alt + 'm<br>' + time
+      ).openPopup();
+      map.setView([lat, lon], 14);
+    }
+
+    function addAlertMarker(lat, lon, humans, sev, time, location) {
+      if (!map || !lat || !lon) return;
+      var color = sev === 'HIGH' ? '#ff3b3b' : sev === 'MEDIUM' ? '#ff9500' : '#00aa55';
+      var icon = L.divIcon({
+        html: '<div style="background:' + color + ';border:2px solid #fff;border-radius:50%;width:14px;height:14px;box-shadow:0 0 6px ' + color + '"></div>',
+        iconSize: [14, 14], iconAnchor: [7, 7], className: ''
+      });
+      var m = L.marker([lat, lon], { icon: icon }).addTo(map);
+      var popupContent = '<b>&#128680; Alert</b><br>' +
+                         'Humans: <b>' + humans + '</b><br>' +
+                         'Severity: <b>' + sev + '</b><br>' +
+                         (location ? 'Location: <b>' + location + '</b><br>' : '') +
+                         time;
+      m.bindPopup(popupContent);
+      alertMarkers.push(m);
+    }
+
+    function initBrowserGeolocation() {
+      if (!navigator.geolocation) {
+        console.error("Geolocation is not supported by this browser.");
+        return;
+      }
+      
+      const sendLocation = (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        const alt = position.coords.altitude || 0;
+        
+        fetch('/update_location', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            latitude: lat,
+            longitude: lon,
+            altitude: alt
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'success') {
+            console.log("Laptop location successfully updated to server:", lat, lon);
+          }
+        })
+        .catch(err => console.error("Error sending geolocation to server:", err));
+      };
+
+      const errorCallback = (error) => {
+        console.warn("Geolocation error:", error);
+        navigator.geolocation.getCurrentPosition(sendLocation, 
+          (err) => console.error("One-time geolocation fallback also failed:", err),
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      };
+
+      // Watch position for continuous updates (ideal for laptop movement / real time tracking)
+      navigator.geolocation.watchPosition(sendLocation, errorCallback, {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      });
+      
+      // Also request it immediately on load
+      navigator.geolocation.getCurrentPosition(sendLocation, errorCallback, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      });
+    }
+
+    setInterval(updateStatus, 2000);
+    setInterval(updateAlerts, 3000);
+    setInterval(updateClock, 1000);
+    updateStatus(); updateAlerts(); updateClock();
+    initBrowserGeolocation();
+
+    async function loadUserProfileHeader() {
+      try {
+        const p = await fetch('/profile').then(r => r.json());
+        if (p && p.name) {
+          document.getElementById('user-display-name').textContent = p.name;
+        }
+      } catch (e) {}
+    }
+    loadUserProfileHeader();
+
+    function roleClass(role) {
+      const r = role.toLowerCase();
+      if (r === 'victim') return 'role-victim';
+      if (r === 'volunteer') return 'role-volunteer';
+      return 'role-rescue';
+    }
+
+    async function loadStats() {
+      try {
+        const s = await fetch('/contacts/stats').then(r => r.json());
+        document.getElementById('db-rescue').textContent = s.rescue_team;
+        document.getElementById('db-volunteers').textContent = s.volunteers;
+        document.getElementById('db-victims').textContent = s.victims;
+        document.getElementById('contact-count').textContent = s.total;
+      } catch (e) { }
+    }
+
+    async function loadContacts() {
+      const contacts = await fetch('/contacts').then(r => r.json());
+      const list = document.getElementById('contact-list');
+      if (!contacts.length) {
+        list.innerHTML = '<div class="empty-state" style="padding:20px">No contacts added yet.</div>';
+        return;
+      }
+      list.innerHTML = contacts.map(c => `
+      <div class="contact-row">
+        <div style="flex:1">
+          <div class="c-name">${c.name}</div>
+          <div class="c-phone">${c.phone}</div>
+          ${c.address ? '<div style="font-size:0.7rem;color:#1a6bb5">&#128205; ' + c.address + '</div>' : ''}
+          ${c.notes ? '<div style="font-size:0.7rem;color:#1a6bb5">&#128221; ' + c.notes + '</div>' : ''}
+          <div style="font-size:0.68rem;color:#90a4ae">Added: ${c.created_at}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span class="role-badge ${roleClass(c.role)}">${c.role}</span>
+          <button class="btn btn-danger" onclick="deleteContact('${c.id}')">&#10005;</button>
+        </div>
+      </div>`).join('');
+    }
+
+    async function addContact() {
+      const name = document.getElementById('c-name').value.trim();
+      const phone = document.getElementById('c-phone').value.trim();
+      const role = document.getElementById('c-role').value;
+      const address = document.getElementById('c-address').value.trim();
+      const notes = document.getElementById('c-notes').value.trim();
+      if (!name || !phone) { showToast('Name and phone are required.'); return; }
+      await fetch('/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, role, address, notes })
+      });
+      document.getElementById('c-name').value = '';
+      document.getElementById('c-phone').value = '';
+      document.getElementById('c-address').value = '';
+      document.getElementById('c-notes').value = '';
+      loadContacts(); loadStats();
+      showToast(name + ' added as ' + role + ' and saved to database.');
+    }
+
+    async function deleteContact(id) {
+      await fetch('/contacts/' + id, { method: 'DELETE' });
+      loadContacts(); loadStats();
+    }
+
+    // ── MESSAGES ──
+    const templates = {
+      rescue: 'Rescue team is en route to your location. Please stay where you are and signal if possible.',
+      evacuate: 'URGENT: Evacuate immediately. Move to higher ground. Follow rescue team instructions.',
+      safe: 'Stay calm and stay safe. Help is on the way. Avoid flood/fire zones until cleared.',
+      rescueteam: 'DEPLOY ORDER: Human presence confirmed at GPS coordinates. Proceed immediately for rescue operation. UAV surveillance active.',
+    };
+
+    function fillTemplate(key) {
+      document.getElementById('msg-text').value = templates[key];
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById('msg-text').value.trim();
+      const target = document.getElementById('msg-target').value;
+      if (!message) { showToast('Please type a message first.'); return; }
+
+      // Optimistically show a pending entry immediately
+      const log = document.getElementById('msg-log');
+      const ts = new Date().toLocaleString();
+      const pendingId = 'pending-msg';
+      const pendingHtml = `<div id="${pendingId}" class="msg-row" style="opacity:0.5">
+      <div class="mr-top"><span class="mr-to">&#128172; Sending to ${target === 'all' ? 'All' : target}...</span></div>
+      <div class="mr-text">${message}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <span class="mr-time">&#128336; ${ts}</span>
+        <span style="font-size:0.7rem;color:#1a6bb5;font-weight:600">&#8987; Sending...</span>
+      </div>
+    </div>`;
+      if (log.querySelector('.empty-state')) log.innerHTML = '';
+      log.insertAdjacentHTML('afterbegin', pendingHtml);
+
+      showToast('Sending...');
+      let res;
+      try {
+        res = await fetch('/send_message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, target })
+        }).then(r => r.json());
+      } catch (e) {
+        showToast('Network error. Please try again.');
+        document.getElementById(pendingId)?.remove();
+        return;
+      }
+
+      document.getElementById(pendingId)?.remove();
+
+      if (res.total === 0) {
+        showToast('No contacts found for selected target.');
+      } else if (res.sent_to && res.sent_to.length > 0 && res.failed.length === 0) {
+        showToast('SMS sent to ' + res.sent_to.length + ' contact(s): ' + res.sent_to.join(', '));
+        document.getElementById('msg-text').value = '';
+      } else if (res.sent_to.length > 0 && res.failed.length > 0) {
+        showToast('Sent: ' + res.sent_to.length + ' | Failed: ' + res.failed.length);
+        document.getElementById('msg-text').value = '';
+      } else {
+        showToast('Failed: ' + (res.failed ? res.failed.join(', ') : 'Unknown error'));
+      }
+      await loadMessages();
+    }
+
+    async function loadMessages() {
+      const msgs = await fetch('/messages').then(r => r.json());
+      const log = document.getElementById('msg-log');
+      document.getElementById('msg-count').textContent = msgs.length;
+      if (!msgs.length) {
+        log.innerHTML = '<div class="empty-state" style="padding:20px">No messages sent yet.</div>';
+        return;
+      }
+      log.innerHTML = msgs.map(m => `
+      <div class="msg-row">
+        <div class="mr-top">
+          <span class="mr-to">&#128172; ${m.sent_to || m.to} (${m.phone})</span>
+          <span class="role-badge ${roleClass(m.role)}">${m.role}</span>
+        </div>
+        <div class="mr-text">${m.message}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span class="mr-time">&#128336; ${m.timestamp}</span>
+          <span style="font-size:0.7rem;color:${m.status === 'Sent' ? '#00aa55' : '#cc2222'};font-weight:600">&#10003; ${m.status}</span>
+        </div>
+      </div>`).join('');
+    }
+
+    async function clearMessages() {
+      if (!confirm('Clear all message logs?')) return;
+      await fetch('/messages/clear', { method: 'DELETE' });
+      loadMessages();
+      showToast('Message log cleared.');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    document.getElementById('msg-text').addEventListener('input', function () {
+      document.getElementById('msg-char-count').textContent = this.value.length;
+    });
+
+    setInterval(loadMessages, 4000);
+    loadContacts(); loadStats(); loadMessages();
+    document.getElementById('feed').src = '/video_feed';
+
+    // ── RESOURCES ──
+    var resources = JSON.parse(localStorage.getItem('uav_resources') || '[]');
+
+    function saveResources() { localStorage.setItem('uav_resources', JSON.stringify(resources)); }
+
+    function statusClass(qty, min) {
+      const pct = min > 0 ? qty / min : 1;
+      if (pct <= 0.3) return 'critical';
+      if (pct <= 0.7) return 'low';
+      return 'ok';
+    }
+
+    function barColor(qty, min) {
+      const s = statusClass(qty, min);
+      return s === 'critical' ? '#ff3b3b' : s === 'low' ? '#ff9500' : '#00aa55';
+    }
+
+    function renderResources() {
+      const list = document.getElementById('resource-list');
+      document.getElementById('res-count').textContent = resources.length;
+      if (!resources.length) { list.innerHTML = '<div class="empty-state" style="padding:40px">No resources added yet.</div>'; return; }
+      list.innerHTML = resources.map((r, i) => {
+        const pct = r.min > 0 ? Math.min(100, Math.round((r.qty / r.min) * 100)) : 100;
+        const sc = statusClass(r.qty, r.min);
+        const bc = barColor(r.qty, r.min);
+        const alertBanner = (sc === 'critical' || sc === 'low') ? `
+        <div style="margin-top:8px;background:${sc === 'critical' ? '#ffeeee' : '#fff8e1'};border:1.5px solid ${sc === 'critical' ? '#cc0000' : '#ff9500'};border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span style="font-size:0.75rem;font-weight:700;color:${sc === 'critical' ? '#cc0000' : '#884400'}">&#9888; ${sc === 'critical' ? 'Critically low' : 'Low stock'} &mdash; Send SMS click here</span>
+          <button class="btn" style="padding:5px 12px;font-size:0.75rem;background:${sc === 'critical' ? '#cc0000' : '#ff9500'};color:#fff;white-space:nowrap;flex-shrink:0" onclick="sendShortageAlert(resources[${i}])">&#128241; Send SMS</button>
+        </div>` : '';
+        return `<div class="resource-item ${sc}">
+        <div style="flex:1">
+          <div class="res-name">${r.cat} ${r.name}</div>
+          <div class="res-qty">Qty: <b>${r.qty}</b> &nbsp;|&nbsp; Min: <b>${r.min}</b> &nbsp;|&nbsp; &#128205; ${r.loc || '—'}</div>
+          <div class="res-bar-wrap"><div class="res-bar" style="width:${pct}%;background:${bc}"></div></div>
+          ${alertBanner}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:12px">
+          <span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:${sc === 'critical' ? '#ffcccc' : sc === 'low' ? '#ffe8cc' : '#ccffdd'};color:${sc === 'critical' ? '#cc0000' : sc === 'low' ? '#884400' : '#006622'}">${sc.toUpperCase()}</span>
+          <div style="display:flex;gap:4px">
+            <button class="btn" style="padding:3px 8px;font-size:0.7rem;background:#1e90ff;color:#fff" onclick="updateQty(${i},-1)">&#8722;</button>
+            <button class="btn" style="padding:3px 8px;font-size:0.7rem;background:#00aa55;color:#fff" onclick="updateQty(${i},1)">&#43;</button>
+            <button class="btn btn-danger" style="padding:3px 8px;font-size:0.7rem" onclick="deleteResource(${i})">&#10005;</button>
+          </div>
+        </div>
+      </div>`;
+      }).join('');
+    }
+
+    async function sendShortageAlert(r) {
+      showToast('⚠️ Shortage detected! Sending SMS to all contacts...');
+      try {
+        const res = await fetch('/send_shortage_alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: r.name, cat: r.cat, qty: r.qty, min: r.min, loc: r.loc })
+        }).then(r => r.json());
+        showToast('📱 Shortage SMS sent to ' + res.sent + ' contact(s)!');
+      } catch (e) {
+        showToast('Failed to send shortage alert.');
+      }
+    }
+
+    function addResource() {
+      const name = document.getElementById('res-name').value.trim();
+      const qty = parseInt(document.getElementById('res-qty').value) || 0;
+      const min = parseInt(document.getElementById('res-min').value) || 0;
+      const cat = document.getElementById('res-cat').value;
+      const loc = document.getElementById('res-loc').value.trim();
+      if (!name) { showToast('Resource name is required.'); return; }
+      resources.unshift({ name, qty, min, cat, loc });
+      saveResources(); renderResources();
+      document.getElementById('res-name').value = '';
+      document.getElementById('res-qty').value = '';
+      document.getElementById('res-min').value = '';
+      document.getElementById('res-loc').value = '';
+      showToast(name + ' added to inventory.');
+      if (statusClass(qty, min) === 'critical') sendShortageAlert(resources[0]);
+    }
+
+    function updateQty(i, delta) {
+      resources[i].qty = Math.max(0, resources[i].qty + delta);
+      const r = resources[i];
+      const wasCritical = statusClass(r.qty - delta, r.min) !== 'critical';
+      const nowCritical = statusClass(r.qty, r.min) === 'critical';
+      if (wasCritical && nowCritical) {
+        sendShortageAlert(r);
+      }
+      saveResources(); renderResources();
+    }
+
+    function deleteResource(i) {
+      resources.splice(i, 1);
+      saveResources(); renderResources();
+    }
+
+    // ── INCIDENTS ──
+    var incidents = JSON.parse(localStorage.getItem('uav_incidents') || '[]');
+    var incidentsHistory = JSON.parse(localStorage.getItem('uav_incidents_history') || '[]');
+
+    function saveIncidents() { localStorage.setItem('uav_incidents', JSON.stringify(incidents)); }
+    function saveIncidentsHistory() { localStorage.setItem('uav_incidents_history', JSON.stringify(incidentsHistory)); }
+
+    const typeLabels = { flood: '&#127754; Flood', fire: '&#128293; Fire', quake: '&#127755; Earthquake', medical: '&#128138; Medical', other: '&#9888; Other' };
+
+    function renderIncidents() {
+      const list = document.getElementById('incident-list');
+      document.getElementById('inc-count').textContent = incidents.length;
+      if (!incidents.length) { list.innerHTML = '<div class="empty-state" style="padding:40px">No active incidents logged yet.</div>'; return; }
+      list.innerHTML = incidents.map((inc, i) => `
+      <div class="incident-row ${inc.priority}">
+        <div class="inc-top">
+          <span class="inc-title">${inc.title}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="inc-type inc-${inc.type}">${typeLabels[inc.type] || inc.type}</span>
+            <span class="inc-status status-${inc.status}">${inc.status === 'active' ? '&#128308; Active' : inc.status === 'progress' ? '&#128992; In Progress' : '&#9989; Resolved'}</span>
+          </div>
+        </div>
+        <div class="inc-meta">&#128205; ${inc.loc || '—'} &nbsp;|&nbsp; &#128336; ${inc.time} &nbsp;|&nbsp; Priority: <b>${inc.priority}</b></div>
+        ${inc.desc ? '<div style="font-size:0.78rem;color:#333;margin-top:4px">' + inc.desc + '</div>' : ''}
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn" style="padding:3px 10px;font-size:0.7rem;background:#ff9500;color:#fff" onclick="setStatus(${i},'progress')">&#128992; In Progress</button>
+          <button class="btn" style="padding:3px 10px;font-size:0.7rem;background:#00aa55;color:#fff" onclick="setStatus(${i},'resolved')">&#9989; Resolve</button>
+          <button class="btn btn-danger" style="padding:3px 10px;font-size:0.7rem" onclick="deleteIncident(${i})">&#10005;</button>
+        </div>
+      </div>`).join('');
+    }
+
+    function renderIncidentsHistory() {
+      const list = document.getElementById('history-list');
+      document.getElementById('history-count').textContent = incidentsHistory.length;
+      if (!incidentsHistory.length) { list.innerHTML = '<div class="empty-state" style="padding:40px">No resolved incidents in history yet.</div>'; return; }
+      list.innerHTML = incidentsHistory.map((inc, i) => `
+      <div class="incident-row ${inc.priority}" style="opacity:0.85">
+        <div class="inc-top">
+          <span class="inc-title">${inc.title}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="inc-type inc-${inc.type}">${typeLabels[inc.type] || inc.type}</span>
+            <span class="inc-status status-resolved" style="background:rgba(16,185,129,0.15);color:#047857;border:1px solid rgba(16,185,129,0.3);padding:2px 8px;border-radius:10px;font-family:'Cinzel',serif;font-size:0.65rem;font-weight:700;">&#9989; Resolved</span>
+          </div>
+        </div>
+        <div class="inc-meta">&#128205; ${inc.loc || '—'} &nbsp;|&nbsp; &#128336; Created: ${inc.time} &nbsp;|&nbsp; &#9201; Resolved: ${inc.resolvedTime || inc.time} &nbsp;|&nbsp; Priority: <b>${inc.priority}</b></div>
+        ${inc.desc ? '<div style="font-size:0.78rem;color:#333;margin-top:4px">' + inc.desc + '</div>' : ''}
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button class="btn btn-danger" style="padding:3px 10px;font-size:0.7rem" onclick="deleteHistory(${i})">&#10005; Delete History</button>
+        </div>
+      </div>`).join('');
+    }
+
+    function addIncident() {
+      const title = document.getElementById('inc-title').value.trim();
+      const type = document.getElementById('inc-type').value;
+      const priority = document.getElementById('inc-priority').value;
+      const loc = document.getElementById('inc-loc').value.trim();
+      const desc = document.getElementById('inc-desc').value.trim();
+      if (!title) { showToast('Incident title is required.'); return; }
+      incidents.unshift({ title, type, priority, loc, desc, status: 'active', time: new Date().toLocaleString() });
+      saveIncidents(); renderIncidents();
+      document.getElementById('inc-title').value = '';
+      document.getElementById('inc-loc').value = '';
+      document.getElementById('inc-desc').value = '';
+      showToast('Incident logged: ' + title);
+    }
+
+    function setStatus(i, status) {
+      if (status === 'resolved') {
+        const resolvedInc = incidents[i];
+        resolvedInc.status = 'resolved';
+        resolvedInc.resolvedTime = new Date().toLocaleString();
+        incidentsHistory.unshift(resolvedInc);
+        incidents.splice(i, 1);
+        saveIncidents();
+        saveIncidentsHistory();
+        renderIncidents();
+        renderIncidentsHistory();
+        showToast('Incident resolved and archived to history.');
+      } else {
+        incidents[i].status = status;
+        saveIncidents();
+        renderIncidents();
+      }
+    }
+
+    function deleteIncident(i) {
+      incidents.splice(i, 1);
+      saveIncidents(); renderIncidents();
+    }
+
+    function deleteHistory(i) {
+      if (confirm('Delete this disaster history permanently?')) {
+        incidentsHistory.splice(i, 1);
+        saveIncidentsHistory();
+        renderIncidentsHistory();
+        showToast('History entry deleted.');
+      }
+    }
+
+    renderResources(); renderIncidents(); renderIncidentsHistory();
+
+    // ── CHARTS ──
+    var pieChart, barChart, lineChart, doughnutChart;
+
+    function initCharts() {
+      const pieCtx = document.getElementById('pieChart').getContext('2d');
+      const barCtx = document.getElementById('barChart').getContext('2d');
+      const lineCtx = document.getElementById('lineChart').getContext('2d');
+      const dCtx = document.getElementById('doughnutChart').getContext('2d');
+
+      const themeColors = {
+        grey: '#6b7280', greyBorder: '#374151',
+        green: '#10b981', greenBorder: '#047857',
+        crimson: '#b91c1c', crimsonBorder: '#7f1d1d',
+        gold: '#cfac62', goldBorder: '#8f7034',
+        text: '#2c241a', grid: '#d8c29e'
+      };
+
+      pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Rescue Team', 'Volunteers', 'Victims'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: [themeColors.grey, themeColors.green, themeColors.crimson],
+            borderColor: [themeColors.greyBorder, themeColors.greenBorder, themeColors.crimsonBorder],
+            borderWidth: 1.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: themeColors.text, font: { family: 'Lora', weight: '700' } }
+            }
+          }
+        }
+      });
+
+      barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['NONE', 'MEDIUM', 'HIGH'],
+          datasets: [{
+            label: 'Alerts',
+            data: [0, 0, 0],
+            backgroundColor: [themeColors.green, themeColors.gold, themeColors.crimson],
+            borderColor: [themeColors.greenBorder, themeColors.goldBorder, themeColors.crimsonBorder],
+            borderWidth: 1.5,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: themeColors.text, font: { family: 'Lora' } }, grid: { color: themeColors.grid } },
+            x: { ticks: { color: themeColors.text, font: { family: 'Lora' } }, grid: { display: false } }
+          }
+        }
+      });
+
+      lineChart = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Humans Detected',
+            data: [],
+            borderColor: themeColors.crimson,
+            backgroundColor: 'rgba(185, 28, 28, 0.15)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: themeColors.crimson,
+            pointBorderColor: '#fff',
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: themeColors.text, font: { family: 'Lora', weight: '700' } } }
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { color: themeColors.text, font: { family: 'Lora' } }, grid: { color: themeColors.grid } },
+            x: { ticks: { color: themeColors.text, font: { family: 'Lora', maxRotation: 30 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      doughnutChart = new Chart(dCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Rescue Team', 'Volunteers', 'Victims'],
+          datasets: [{
+            data: [0, 0, 0],
+            backgroundColor: [themeColors.grey, themeColors.green, themeColors.crimson],
+            borderColor: [themeColors.greyBorder, themeColors.greenBorder, themeColors.crimsonBorder],
+            borderWidth: 1.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: themeColors.text, font: { family: 'Lora', weight: '700' } }
+            }
+          }
+        }
+      });
+
+      updateCharts();
+    }
+
+    async function updateCharts() {
+      try {
+        const [stats, alerts, msgs] = await Promise.all([
+          fetch('/contacts/stats').then(r => r.json()),
+          fetch('/alerts').then(r => r.json()),
+          fetch('/messages').then(r => r.json())
+        ]);
+        pieChart.data.datasets[0].data = [stats.rescue_team || 0, stats.volunteers || 0, stats.victims || 0];
+        pieChart.update();
+        const sev = { NONE: 0, MEDIUM: 0, HIGH: 0 };
+        alerts.forEach(a => { if (sev[a.severity] !== undefined) sev[a.severity]++; });
+        barChart.data.datasets[0].data = [sev.NONE, sev.MEDIUM, sev.HIGH];
+        barChart.update();
+        const recent = alerts.slice(-10);
+        lineChart.data.labels = recent.map(a => a.timestamp ? a.timestamp.split(' ')[1] || a.timestamp : '');
+        lineChart.data.datasets[0].data = recent.map(a => a.humans_detected ?? a.humans ?? 0);
+        lineChart.update();
+        const roles = { 'Rescue Team': 0, 'Volunteer': 0, 'Victim': 0 };
+        msgs.forEach(m => { if (roles[m.role] !== undefined) roles[m.role]++; });
+        doughnutChart.data.datasets[0].data = [roles['Rescue Team'], roles['Volunteer'], roles['Victim']];
+        doughnutChart.update();
+      } catch (e) { }
+    }
+
+    setInterval(() => { if (pieChart) updateCharts(); }, 5000);
+  </script>
+</body>
+
+</html>

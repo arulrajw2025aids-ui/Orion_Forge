@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAV Disaster Detection System</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;500;700;900&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0b0b0e;
+      --bg-secondary: #121217;
+      --bg-card: rgba(22, 22, 28, 0.85);
+      --border-glow: rgba(140, 110, 80, 0.25);
+      --border-glow-active: rgba(207, 172, 98, 0.75);
+      --text-primary: #f1f5f9;
+      --text-secondary: #a89f91;
+      --neon-cyan: #cfac62;
+      /* Warm Burnished Gold */
+      --neon-blue: #38bdf8;
+      /* Ice Blue */
+      --neon-purple: #b91c1c;
+      /* Crimson Dragon Blood */
+      --neon-green: #10b981;
+      /* Wildfire Green */
+      --neon-red: #881313;
+      /* Dark Crimson Red (Wax Seal) */
+      --neon-orange: #f59e0b;
+      /* Dragonfire Orange */
+    }
+
+    html, body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Lora', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      position: relative;
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23cfac62" stroke-width="1.8" opacity="0.6" filter="url(%23goldGlow)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGrad)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23fff5e0" stroke-width="0.6" opacity="0.9"/></svg>') 0 0, auto;
+    }
+
+    a, button, .btn, .feature-card, .em-item, .step-card, .contact-item {
+      cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><linearGradient id="goldGradHover" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="%23fff5e0"/><stop offset="50%" stop-color="%23cfac62"/><stop offset="100%" stop-color="%238f7034"/></linearGradient><filter id="goldGlowHover" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.2" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter></defs><path d="M 1,1 L 1,18 L 5.5,13.5 L 9.5,21.5 L 12,20.25 L 8,12.25 L 13,12.25 Z" fill="none" stroke="%23f59e0b" stroke-width="1.8" opacity="0.8" filter="url(%23goldGlowHover)"/><path d="M 0,0 L 0,17 L 4.5,12.5 L 8.5,20.5 L 11,19.25 L 7,11.25 L 12,11.25 Z" fill="url(%23goldGradHover)" stroke="%23110d0a" stroke-width="0.8"/><path d="M 1.5,2.5 L 1.5,14 L 4.5,11 L 8.5,19 L 9.2,18.5 L 5.2,10.5 L 9,10.5 Z" fill="none" stroke="%23ffffff" stroke-width="0.6" opacity="0.95"/></svg>') 0 0, pointer;
+    }
+
+    input, textarea {
+      cursor: text;
+    }
+
+    /* Gold Gilt Corner Brackets styling */
+    .corner-bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      z-index: 5;
+      pointer-events: none;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      opacity: 0.65;
+    }
+    .corner-tl {
+      top: 8px;
+      left: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18V2h16M2 2l8 8M6 2h6M2 6v6M6 6h1"/></svg>') no-repeat center/contain;
+    }
+    .corner-tr {
+      top: 8px;
+      right: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18V2H6M22 2l-8 8M18 2h-6M22 6v6M18 6h-1"/></svg>') no-repeat center/contain;
+    }
+    .corner-bl {
+      bottom: 8px;
+      left: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6v16h16M2 22l8-8M6 22h6M2 18v-6M6 18h1"/></svg>') no-repeat center/contain;
+    }
+    .corner-br {
+      bottom: 8px;
+      right: 8px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23cfac62" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 6v16H6M22 22l-8-8M18 22h-6M22 18v-6M18 18h-1"/></svg>') no-repeat center/contain;
+    }
+
+    /* Expand brackets slightly on card hover */
+    .features-grid:hover > .corner-tl, .feature-card:hover > .corner-tl, .step-card:hover > .corner-tl, .contact-wrap:hover > .corner-tl { top: 4px; left: 4px; opacity: 1; filter: drop-shadow(0 0 4px var(--neon-cyan)); }
+    .features-grid:hover > .corner-tr, .feature-card:hover > .corner-tr, .step-card:hover > .corner-tr, .contact-wrap:hover > .corner-tr { top: 4px; right: 4px; opacity: 1; filter: drop-shadow(0 0 4px var(--neon-cyan)); }
+    .features-grid:hover > .corner-bl, .feature-card:hover > .corner-bl, .step-card:hover > .corner-bl, .contact-wrap:hover > .corner-bl { bottom: 4px; left: 4px; opacity: 1; filter: drop-shadow(0 0 4px var(--neon-cyan)); }
+    .features-grid:hover > .corner-br, .feature-card:hover > .corner-br, .step-card:hover > .corner-br, .contact-wrap:hover > .corner-br { bottom: 4px; right: 4px; opacity: 1; filter: drop-shadow(0 0 4px var(--neon-cyan)); }
+
+    /* Ancient Vignette Overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle, transparent 20%, rgba(7, 8, 10, 0.95) 100%);
+      z-index: -2;
+      pointer-events: none;
+    }
+
+    /* Song of Ice and Fire: Drifting Elements */
+    .bg-embers {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      left: 50%;
+      background-image:
+        radial-gradient(circle, rgba(245, 158, 11, 0.15) 1px, transparent 1px),
+        radial-gradient(circle, rgba(185, 28, 28, 0.1) 1.5px, transparent 1.5px);
+      background-size: 80px 140px;
+      z-index: -1;
+      pointer-events: none;
+      animation: embers-float 25s linear infinite;
+    }
+
+    .bg-frost {
+      position: fixed;
+      inset: 0;
+      width: 50%;
+      right: 50%;
+      background-image:
+        radial-gradient(circle, rgba(56, 189, 248, 0.15) 1px, transparent 1px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.1) 1.5px, transparent 1.5px);
+      background-size: 100px 150px;
+      z-index: -1;
+      pointer-events: none;
+      animation: frost-float 30s linear infinite;
+    }
+
+    @keyframes embers-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: 40px -280px;
+      }
+    }
+
+    @keyframes frost-float {
+      from {
+        background-position: 0 0;
+      }
+
+      to {
+        background-position: -30px 300px;
+      }
+    }
+
+    /* Shifting Ice & Fire Glow Elements */
+    .bg-glow-1,
+    .bg-glow-2,
+    .bg-glow-3 {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: -1;
+      pointer-events: none;
+      opacity: 0.35;
+      will-change: transform, opacity;
+    }
+
+    .bg-glow-1 {
+      top: -10%;
+      left: -10%;
+      width: 45vw;
+      height: 45vw;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, transparent 75%);
+      animation: bg-move-1 25s ease-in-out infinite alternate, firelight-flicker 4s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-2 {
+      bottom: -15%;
+      right: -15%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 75%);
+      animation: bg-move-2 30s ease-in-out infinite alternate, firelight-flicker 5s ease-in-out infinite alternate;
+    }
+
+    .bg-glow-3 {
+      top: 35%;
+      left: 30%;
+      width: 35vw;
+      height: 35vw;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 75%);
+      animation: bg-move-3 22s ease-in-out infinite alternate, firelight-flicker 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes firelight-flicker {
+      0%, 100% {
+        opacity: 0.28;
+      }
+      25% {
+        opacity: 0.38;
+      }
+      50% {
+        opacity: 0.25;
+      }
+      75% {
+        opacity: 0.42;
+      }
+    }
+
+    @keyframes bg-move-1 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.3;
+      }
+
+      100% {
+        transform: translate(12vw, 8vh) scale(1.25);
+        opacity: 0.45;
+      }
+    }
+
+    @keyframes bg-move-2 {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.25;
+      }
+
+      100% {
+        transform: translate(-8vw, -12vh) scale(1.2);
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes bg-move-3 {
+      0% {
+        transform: translate(-10vw, -10vh) scale(0.9);
+        opacity: 0.18;
+      }
+
+      100% {
+        transform: translate(8vw, 12vh) scale(1.2);
+        opacity: 0.35;
+      }
+    }
+
+    /* ── SCROLL REVEAL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: scale(0.98) translateY(20px);
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .reveal.revealed {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+
+    /* Delays */
+    .delay-1 {
+      transition-delay: 0.12s;
+    }
+
+    .delay-2 {
+      transition-delay: 0.24s;
+    }
+
+    .delay-3 {
+      transition-delay: 0.36s;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 60px;
+      background: rgba(11, 11, 14, 0.95);
+      border-bottom: 2px solid #cfac62;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 14px 20px;
+      }
+
+      .nav-links {
+        display: none !important;
+      }
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 0 6px var(--neon-cyan));
+      animation: floating-logo 3.5s ease-in-out infinite;
+    }
+
+    @keyframes floating-logo {
+      0%,
+      100% {
+        transform: translateY(0) rotate(0);
+      }
+
+      50% {
+        transform: translateY(-3px) rotate(6deg);
+      }
+    }
+
+    .logo-text {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.25rem;
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--text-primary);
+      letter-spacing: 1px;
+    }
+
+    .logo-text span {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 8px rgba(207, 172, 98, 0.3);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      transition: all 0.3s ease;
+      position: relative;
+      padding: 6px 0;
+    }
+
+    .nav-links a:hover {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 6px rgba(207, 172, 98, 0.4);
+    }
+
+    .nav-links a.active {
+      color: var(--neon-cyan);
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 1px;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 6px var(--neon-cyan);
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+
+    .nav-links a:hover::after,
+    .nav-links a.active::after {
+      width: 100%;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(22, 22, 28, 0.8);
+      border: 1px solid #cfac62;
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: 'Cinzel', serif;
+      transition: all 0.3s ease;
+    }
+
+    .user-pill:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(207, 172, 98, 0.15);
+    }
+
+    .user-pill a {
+      color: var(--neon-purple);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-left: 8px;
+      border-left: 1px solid rgba(207, 172, 98, 0.3);
+      padding-left: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .user-pill a:hover {
+      color: #ff4747;
+      text-shadow: 0 0 6px rgba(168, 50, 50, 0.5);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 12px 28px;
+      border-radius: 4px;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      border: none;
+      position: relative;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #cfac62, #8f7034);
+      border: 1px solid #cfac62;
+      color: #0b0b0e;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 8px rgba(207, 172, 98, 0.25);
+      animation: btn-flame-pulse 3s infinite;
+      font-weight: 900;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(207, 172, 98, 0.25), transparent);
+      transition: left 0.7s ease;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(207, 172, 98, 0.5);
+      background: linear-gradient(135deg, #e5c583, #a68442);
+      color: #0b0b0e;
+    }
+
+    @keyframes btn-flame-pulse {
+      0%,
+      100% {
+        box-shadow: 0 0 10px rgba(207, 172, 98, 0.25);
+      }
+
+      50% {
+        box-shadow: 0 0 22px rgba(245, 158, 11, 0.55);
+      }
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--neon-cyan);
+      border: 1px solid #cfac62;
+      box-shadow: inset 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    .btn-outline:hover {
+      background: rgba(207, 172, 98, 0.08);
+      border-color: var(--neon-cyan);
+      transform: translateY(-2px);
+    }
+
+    /* Gilded medieval section dividers */
+    .section-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 90px auto;
+      max-width: 1200px;
+      gap: 20px;
+      padding: 0 40px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan) 50%, transparent);
+      opacity: 0.5;
+      position: relative;
+    }
+
+    .divider-line::after {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4) 50%, transparent);
+      filter: blur(2px);
+    }
+
+    .divider-icon-wrap {
+      width: 50px;
+      height: 50px;
+      border: 2px solid var(--neon-cyan);
+      border-radius: 50%;
+      background: #121217;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 0 15px rgba(207, 172, 98, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .divider-icon-wrap svg {
+      width: 28px;
+      height: 28px;
+      fill: var(--neon-cyan);
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+      animation: sword-pulse 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes sword-pulse {
+      0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(207, 172, 98, 0.4));
+      }
+      100% {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 8px rgba(207, 172, 98, 0.9));
+      }
+    }
+
+    /* ── HERO SECTION ── */
+    .hero {
+      position: relative;
+      padding: 140px 80px 180px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      border-bottom: 2px solid #cfac62;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      /* Hero bg image brightened with a gradient layout for readability */
+      background: linear-gradient(90deg, rgba(11, 11, 14, 0.55) 0%, rgba(11, 11, 14, 0.25) 60%, rgba(11, 11, 14, 0.15) 100%), url('/static/img/drone_bg.png') center/cover no-repeat;
+      filter: saturate(1.15) brightness(0.95) contrast(1.1);
+      z-index: 1;
+      transform: scale(1.02);
+      animation: hero-zoom 35s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      /* Slow moving mist/fog overlay inside hero, positioned below content */
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.006" numOctaves="3" result="noise"/><feColorMatrix type="matrix" values="1 0 0 0 0.8  0 1 0 0 0.67  0 0 1 0 0.38  0 0 0 0.12 0" x="0%" y="0%" width="100%" height="100%"/></filter><rect width="800" height="800" filter="url(%23f)"/></svg>');
+      opacity: 0.22;
+      z-index: 1;
+      pointer-events: none;
+      animation: fog-drift 45s linear infinite;
+    }
+
+    @keyframes hero-zoom {
+      0% {
+        transform: scale(1.02) rotate(0deg);
+      }
+
+      100% {
+        transform: scale(1.12) rotate(0.4deg);
+      }
+    }
+
+    @keyframes fog-drift {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: 800px -400px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .hero {
+        padding: 100px 40px 120px;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .hero::before {
+        background: linear-gradient(180deg, rgba(11, 11, 14, 0.8) 0%, rgba(11, 11, 14, 0.5) 100%), url('/static/img/drone_bg.png') center/cover no-repeat !important;
+      }
+
+      .hero-content {
+        max-width: 100% !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+
+    .hero-content {
+      max-width: 700px;
+      z-index: 2;
+    }
+
+    .hero-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+      border-left: 2px solid var(--neon-cyan);
+      padding-left: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 12px rgba(207, 172, 98, 0.35);
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: 1px;
+      background: linear-gradient(120deg, var(--text-primary) 20%, #ffdf9e 40%, #cfac62 60%, var(--text-primary) 80%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.95));
+      animation: text-shine 6s linear infinite;
+    }
+
+    @keyframes text-shine {
+      to {
+        background-position: 200% center;
+      }
+    }
+
+    .hero-desc {
+      font-family: 'Lora', serif;
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+      margin-bottom: 40px;
+      text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95);
+    }
+
+    /* ── OVERLAPPING FEATURES ── */
+    .features-wrapper {
+      position: relative;
+      max-width: 1300px;
+      margin: -60px auto 0;
+      padding: 0 60px;
+      z-index: 10;
+    }
+
+    @media (max-width: 768px) {
+      .features-wrapper {
+        padding: 0 20px;
+        margin-top: -30px;
+      }
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: linear-gradient(135deg, rgba(30, 30, 38, 0.9) 0%, rgba(22, 22, 28, 0.95) 100%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" fill="none" stroke="rgba(207, 172, 98, 0.015)" stroke-width="0.5"/></svg>');
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px double #cfac62;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+    }
+
+    @media (max-width: 768px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Antique double border features card */
+    .feature-card {
+      padding: 36px 30px;
+      border-right: 1px solid rgba(207, 172, 98, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.4s ease;
+      position: relative;
+    }
+
+    .feature-card:last-child {
+      border-right: none;
+    }
+
+    @media (max-width: 768px) {
+      .feature-card {
+        border-right: none;
+        border-bottom: 1px solid rgba(207, 172, 98, 0.2);
+      }
+
+      .feature-card:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(207, 172, 98, 0.3), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    /* Candle Flicker Hover Effect */
+    @keyframes gold-flicker {
+      0%,
+      100% {
+        border-color: rgba(207, 172, 98, 0.25);
+        box-shadow: 0 0 10px rgba(207, 172, 98, 0.05);
+      }
+
+      50% {
+        border-color: rgba(207, 172, 98, 0.8);
+        box-shadow: 0 0 20px rgba(207, 172, 98, 0.3);
+      }
+    }
+
+    .feature-card:hover {
+      background: rgba(30, 30, 38, 0.85);
+      transform: translateY(-5px);
+      animation: gold-flicker 1.5s infinite alternate;
+    }
+
+    .fc-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      border: 1px solid rgba(207, 172, 98, 0.4);
+      background: rgba(11, 11, 14, 0.8);
+      color: var(--neon-cyan);
+      box-shadow: inset 0 0 8px rgba(207, 172, 98, 0.1);
+    }
+
+    .fc-title {
+      font-family: 'Cinzel', serif;
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .fc-desc {
+      font-family: 'Lora', serif;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ── BUILT FOR EMERGENCIES ── */
+    .emergencies {
+      text-align: center;
+      padding: 160px 80px;
+      background: 
+        linear-gradient(rgba(11, 11, 14, 0.65), rgba(11, 11, 14, 0.65)), 
+        url('/static/img/emergencies_bg.png') center/cover no-repeat;
+      position: relative;
+      border: none;
+      z-index: 3;
+    }
+
+    @media (max-width: 768px) {
+      .emergencies {
+        padding: 120px 20px 80px;
+      }
+    }
+
+    .torn-edge {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      z-index: 4;
+      pointer-events: none;
+      filter: url(#torn-wave);
+    }
+    .top-torn {
+      top: -2px;
+    }
+    .bottom-torn {
+      bottom: -2px;
+    }
+
+    /* Burning charcoal/ember glow animation for the torn edges */
+    @keyframes ember-glow {
+      0%, 100% {
+        stroke: #4a2c11;
+        filter: drop-shadow(0 0 1px rgba(245, 158, 11, 0.3));
+      }
+      50% {
+        stroke: #b91c1c;
+        filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.9));
+      }
+    }
+    .charred-edge {
+      animation: ember-glow 4s ease-in-out infinite;
+    }
+
+    .em-tag {
+      font-family: 'Cinzel', serif;
+      color: var(--neon-cyan);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+    }
+
+    .em-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 2.6rem;
+      font-weight: 900;
+      background: linear-gradient(120deg, var(--text-primary) 20%, #ffdf9e 40%, #cfac62 60%, var(--text-primary) 80%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+      animation: text-shine 6s linear infinite;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.95));
+    }
+
+    .em-desc {
+      font-family: 'Lora', serif;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto 60px;
+      line-height: 1.7;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.95);
+      font-weight: 500;
+    }
+
+    .em-icons {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 1000px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 5;
+    }
+
+    .em-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      background: rgba(11, 11, 14, 0.92);
+      border: 1px solid rgba(207, 172, 98, 0.35);
+      padding: 30px 40px;
+      border-radius: 8px;
+      width: 200px;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .em-item:hover {
+      transform: translateY(-8px);
+      background: rgba(22, 22, 28, 0.96);
+    }
+
+    /* Element Hover Glows matching Ice and Fire colors */
+    .em-item.em-flood:hover {
+      border-color: var(--neon-blue);
+      box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+    }
+
+    .em-item.em-quake:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 10px 25px rgba(207, 172, 98, 0.25);
+    }
+
+    .em-item.em-landslide:hover {
+      border-color: #94a3b8;
+      box-shadow: 0 10px 25px rgba(148, 163, 184, 0.25);
+    }
+
+    .em-item.em-cyclone:hover {
+      border-color: var(--neon-green);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+    }
+
+    .em-item .icon {
+      font-size: 2.8rem;
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      color: var(--neon-cyan);
+    }
+
+    .em-item:hover .icon {
+      transform: scale(1.18) translateY(-3px);
+    }
+
+    .em-item span {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-it-works {
+      padding: 120px 80px;
+      /* Textured weathered Citadel paving stone layout */
+      background: radial-gradient(circle at 50% 50%, rgba(22, 22, 28, 0.7) 0%, rgba(11, 11, 14, 0.95) 90%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><path d="M0 40 L80 40 M40 0 L40 80 M0 0 L80 80 M80 0 L0 80" stroke="rgba(207, 172, 98, 0.015)" stroke-width="0.75"/></svg>') repeat;
+      text-align: center;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      .how-it-works {
+        padding: 80px 20px;
+      }
+    }
+
+    /* Connecting gold-tinted line behind steps */
+    .step-grid-connector {
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 2px;
+      border-top: 2px solid rgba(207, 172, 98, 0.25);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1024px) {
+      .step-grid-connector {
+        display: none;
+      }
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 30px;
+      margin-top: 70px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+    }
+
+    @media (max-width: 1024px) {
+      .step-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 40px;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .step-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .step-card {
+      padding: 40px 30px;
+      background: rgba(22, 22, 28, 0.65);
+      border-radius: 8px;
+      border: 1px solid rgba(207, 172, 98, 0.25);
+      position: relative;
+      transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+      z-index: 2;
+    }
+
+    .step-card:hover {
+      background: rgba(30, 30, 38, 0.85);
+      transform: translateY(-6px);
+      animation: gold-flicker 1.5s infinite alternate;
+    }
+
+    /* Crimson Wax Seal Step Numbers with 3D bevel & melted edge */
+    .step-number {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 48px;
+      height: 48px;
+      background: radial-gradient(circle, #b91c1c 30%, #7f1212 90%);
+      color: #cfac62;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* Melted, irregular circle look */
+      border-radius: 48% 52% 49% 51% / 50% 48% 52% 50%;
+      font-family: 'Cinzel Decorative', serif;
+      font-weight: 900;
+      font-size: 1.35rem;
+      /* 3D bevel wax seal shadows */
+      box-shadow: 
+        0 4px 10px rgba(0, 0, 0, 0.65), 
+        inset -3px -3px 7px rgba(0, 0, 0, 0.8), 
+        inset 3px 3px 7px rgba(255, 255, 255, 0.35);
+      border: 2px solid #8a1313;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 5;
+    }
+
+    /* Wax seal outer squeezed rim */
+    .step-number::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      background: radial-gradient(circle, transparent 65%, rgba(136, 19, 19, 0.95) 75%, #5a0c0c 100%);
+      border-radius: 46% 54% 52% 48% / 48% 52% 48% 52%;
+      z-index: -1;
+      pointer-events: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .step-card:hover .step-number {
+      transform: translateX(-50%) scale(1.15) rotate(5deg);
+      box-shadow: 
+        0 8px 16px rgba(0, 0, 0, 0.75), 
+        inset -3px -3px 7px rgba(0, 0, 0, 0.8), 
+        inset 3px 3px 7px rgba(255, 255, 255, 0.35);
+    }
+
+    .step-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 16px;
+      margin-bottom: 12px;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+    }
+
+    .step-desc {
+      font-family: 'Lora', serif;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ── CONTACT SECTION ── */
+    .contact-section {
+      padding: 120px 80px;
+      /* Dark volcanic castle halls layout */
+      background: linear-gradient(to bottom, rgba(18, 18, 23, 0.75) 0%, rgba(11, 11, 14, 0.96) 100%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><path d="M0 40 L80 40 M40 0 L40 80 M0 0 L80 80 M80 0 L0 80" stroke="rgba(207, 172, 98, 0.015)" stroke-width="0.75"/></svg>') repeat;
+      text-align: center;
+      position: relative;
+    }
+
+    @media (max-width: 768px) {
+      .contact-section {
+        padding: 80px 20px;
+      }
+    }
+
+    .contact-wrap {
+      max-width: 750px;
+      margin: 60px auto 0;
+      background: rgba(22, 22, 28, 0.75);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      border: 2px double #cfac62;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .contact-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 580px) {
+      .contact-details {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+      background: rgba(11, 11, 14, 0.65);
+      border-radius: 8px;
+      border-left: 4px solid #cfac62;
+      text-align: left;
+      transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    .contact-item:hover {
+      background: rgba(22, 22, 28, 0.85);
+      transform: translateX(6px);
+      box-shadow: 0 6px 15px rgba(207, 172, 98, 0.08);
+      border-left-color: var(--neon-cyan);
+      animation: gold-flicker 1.5s infinite alternate;
+    }
+
+    .contact-icon {
+      font-size: 1.8rem;
+      flex-shrink: 0;
+      color: var(--neon-cyan);
+      filter: drop-shadow(0 0 5px rgba(207, 172, 98, 0.3));
+      transition: transform 0.3s ease;
+    }
+
+    .contact-item:hover .contact-icon {
+      transform: scale(1.15) rotate(-10deg);
+    }
+
+    .contact-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+
+    .contact-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* ── TOAST & FOOTER ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(22, 22, 28, 0.95);
+      border: 1px solid var(--neon-cyan);
+      color: var(--text-primary);
+      padding: 14px 24px;
+      border-radius: 4px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(207, 172, 98, 0.15);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      background: rgba(11, 11, 14, 0.95);
+      border-top: 1px solid rgba(207, 172, 98, 0.2);
+      color: var(--text-secondary);
+      margin-top: auto;
+    }
+
+    footer span {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 5px rgba(207, 172, 98, 0.3);
+    }
+
+    /* Faint medieval House Sigil watermarks */
+    .house-sigil {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 420px;
+      height: 420px;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.022;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    /* Subtle hover scales for depth */
+    .features-wrapper:hover .sigil-stark {
+      transform: translate(-50%, -50%) scale(1.06);
+      opacity: 0.035;
+    }
+    .how-it-works:hover .sigil-lannister {
+      transform: translate(-50%, -50%) scale(1.06);
+      opacity: 0.035;
+    }
+    .contact-section:hover .sigil-baratheon {
+      transform: translate(-50%, -50%) scale(1.06);
+      opacity: 0.035;
+    }
+
+    /* Parchment variables and modal styles for Profile Details */
+    :root {
+      --bg-parchment: #f4ead4;
+      --text-parchment: #2c241a;
+      --border-parchment: #e0d0b0;
+    }
+
+    /* IMAGE/PROFILE MODAL */
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      padding-top: 60px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(11, 11, 14, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: opacity 0.3s ease;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #a89f91;
+      font-size: 40px;
+      font-weight: bold;
+      transition: 0.3s;
+      cursor: pointer;
+      z-index: 10001;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+      color: #cfac62;
+      text-decoration: none;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .form-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-parchment);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .form-input,
+    .form-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-parchment);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.45);
+      color: var(--text-parchment);
+      font-size: 0.88rem;
+      outline: none;
+      font-family: 'Lora', serif;
+      transition: all 0.25s;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+      border-color: var(--neon-cyan);
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 8px rgba(207, 172, 98, 0.15);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Global SVG Filters for Medieval GoT Effects -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" width="0" height="0">
+    <defs>
+      <!-- Torn Edge Wave Displacement Filter -->
+      <filter id="torn-wave" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.015 0.06" numOctaves="3" result="noise">
+          <animate attributeName="baseFrequency" dur="15s" values="0.012 0.05; 0.018 0.08; 0.012 0.05" repeatCount="indefinite" />
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Floating Shifting Firelight Elements -->
+  <div class="bg-embers"></div>
+  <div class="bg-frost"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="bg-glow-3"></div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="#home" class="logo">
+      <span class="logo-icon"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 2rem; height: 2rem; display: inline-block; vertical-align: middle;"><circle cx="32" cy="32" r="6" fill="#cfac62" stroke="#8f7034" stroke-width="1.5"/><circle cx="32" cy="32" r="3" fill="#110d0a"/><path d="M28 28 L14 14 M36 28 L50 14 M28 36 L14 50 M36 36 L50 50" stroke="#cfac62" stroke-width="3" stroke-linecap="round"/><circle cx="14" cy="14" r="4" fill="#8f7034"/><circle cx="50" cy="14" r="4" fill="#8f7034"/><circle cx="14" cy="50" r="4" fill="#8f7034"/><circle cx="50" cy="50" r="4" fill="#8f7034"/><path d="M6 14 Q14 8 22 14 Q14 20 6 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M42 14 Q50 8 58 14 Q50 20 42 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M6 50 Q14 44 22 50 Q14 56 6 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M42 50 Q50 44 58 50 Q50 56 42 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><circle cx="32" cy="24" r="1.5" fill="#ff3b3b"/></svg></span>
+      <div class="logo-text">UAV DISASTER<br><span>DETECTION</span></div>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="user-pill">
+        <span onclick="openProfileModal()" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px" title="View Profile">
+          <span style="color:var(--neon-cyan);display:inline-flex;align-items:center;"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
+          <span style="color:var(--text-primary);font-weight:600">{{ username }}</span>
+        </span>
+        <a href="/logout">Logout &#9211;</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <div class="hero-tag reveal">SMARTER DETECTION. FASTER RESPONSE. SAVING LIVES.</div>
+      <h1 class="hero-title reveal delay-1">UAV-Powered<br>Disaster Management</h1>
+      <p class="hero-desc reveal delay-2">Real-time aerial intelligence to detect disasters early, assess damage, and
+        support faster decision making.</p>
+      <div class="hero-actions reveal delay-3">
+        <a href="javascript:void(0)" onclick="openDashboardFullscreen()" class="btn btn-primary"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 1.1rem; height: 1.1rem; display: inline-block; vertical-align: middle; margin-right: 8px;"><circle cx="32" cy="32" r="6" fill="#cfac62" stroke="#8f7034" stroke-width="1.5"/><circle cx="32" cy="32" r="3" fill="#110d0a"/><path d="M28 28 L14 14 M36 28 L50 14 M28 36 L14 50 M36 36 L50 50" stroke="#cfac62" stroke-width="3" stroke-linecap="round"/><circle cx="14" cy="14" r="4" fill="#8f7034"/><circle cx="50" cy="14" r="4" fill="#8f7034"/><circle cx="14" cy="50" r="4" fill="#8f7034"/><circle cx="50" cy="50" r="4" fill="#8f7034"/><path d="M6 14 Q14 8 22 14 Q14 20 6 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M42 14 Q50 8 58 14 Q50 20 42 14 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M6 50 Q14 44 22 50 Q14 56 6 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><path d="M42 50 Q50 44 58 50 Q50 56 42 50 Z" fill="rgba(207, 172, 98, 0.35)" stroke="#cfac62" stroke-width="1"/><circle cx="32" cy="24" r="1.5" fill="#ff3b3b"/></svg> Launch Dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERLAPPING FEATURES -->
+  <div class="features-wrapper" id="features">
+    <!-- Stark Direwolf Watermark -->
+    <div class="house-sigil sigil-stark">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20,60 L35,45 L50,45 L65,30 L70,35 L65,50 L80,55 L60,65 L45,65 L30,75 L25,70 L30,60 Z M65,30 L60,20 L55,25 Z M50,45 L45,35 L40,40 Z" fill="none" stroke="#cfac62" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="fc-icon blue"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>
+        <div class="fc-title">Real-time Detection</div>
+        <div class="fc-desc">AI-powered analysis of UAV footage for instant threat identification.</div>
+      </div>
+      <div class="feature-card reveal delay-1">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="fc-icon green"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg></div>
+        <div class="fc-title">Area Mapping</div>
+        <div class="fc-desc">High-resolution mapping for accurate situational awareness.</div>
+      </div>
+      <div class="feature-card reveal delay-2">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="fc-icon purple"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M5.22 5.22l2.12 2.12M18.78 5.22l-2.12 2.12M22 12h-3M2 12h3M12 9a6 6 0 0 0-6 6v5h12v-5a6 6 0 0 0-6-6zM4 20h16"></path></svg></div>
+        <div class="fc-title">Alerts & Notifications</div>
+        <div class="fc-desc">Timely alerts to help authorities take immediate action.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Divider -->
+  
+
+  <!-- BUILT FOR EMERGENCIES -->
+  <section class="emergencies">
+    <!-- Top Torn Edge Overlay -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" class="torn-edge top-torn">
+      <filter id="paper-shadow-top">
+        <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
+      </filter>
+      <!-- Solid black masking that stops at the jagged line -->
+      <path d="M0,0 L1200,0 L1200,60 Q1140,50 1080,70 T1020,55 T960,60 T900,45 T840,70 T780,50 T720,65 T660,45 T600,75 T540,55 T480,60 T420,40 T360,65 T300,50 T240,70 T180,45 T120,65 T60,55 L0,60 Z" fill="#0b0b0e" filter="url(#paper-shadow-top)"/>
+      <path class="charred-edge" d="M0,60 Q30,75 60,55 T120,65 T180,45 T240,70 T300,50 T360,65 T420,40 T480,60 T540,55 T600,75 T660,45 T720,65 T780,50 T840,70 T900,45 T960,60 T1020,55 T1080,70 T1140,50 L1200,60" fill="none" stroke="#4a2c11" stroke-width="4" opacity="0.85"/>
+      <path d="M0,60 Q30,75 60,55 T120,65 T180,45 T240,70 T300,50 T360,65 T420,40 T480,60 T540,55 T600,75 T660,45 T720,65 T780,50 T840,70 T900,45 T960,60 T1020,55 T1080,70 T1140,50 L1200,60" fill="none" stroke="#1c0a02" stroke-width="1.5" opacity="0.95"/>
+    </svg>
+
+    <div class="em-tag reveal">BUILT FOR EMERGENCIES</div>
+    <h2 class="em-title reveal delay-1">Supporting Teams. Saving Lives.</h2>
+    <p class="em-desc reveal delay-2">Our UAV-based system empowers emergency teams with real-time data, helping them
+      make faster decisions and save more lives.</p>
+ 
+    <div class="em-icons">
+      <div class="em-item em-flood reveal">
+        <div class="icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17c.6-1.9 1.7-3.5 3.5-4.5 1.8-1 3.9-1 5.7.1 1.8 1.1 3.9 1.1 5.7 0 1.8-1 2.9-2.6 3.5-4.5M2 22c.6-1.9 1.7-3.5 3.5-4.5 1.8-1 3.9-1 5.7.1 1.8 1.1 3.9 1.1 5.7 0 1.8-1 2.9-2.6 3.5-4.5"></path></svg></div>
+        <span>Floods</span>
+      </div>
+      <div class="em-item em-quake reveal delay-1">
+        <div class="icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 20 5-13 3 3 4-6 8 16H2ZM12 20v-5l-2-2"></path></svg></div>
+        <span>Earthquakes</span>
+      </div>
+      <div class="em-item em-landslide reveal delay-2">
+        <div class="icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 20 6-8 4 5 8-10 2 3M2 22h20"></path></svg></div>
+        <span>Landslides</span>
+      </div>
+      <div class="em-item em-cyclone reveal delay-3">
+        <div class="icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4H5M17 8H7M18 12H9M15 16H10M13 20h-2"></path></svg></div>
+        <span>Cyclones</span>
+      </div>
+    </div>
+
+    <!-- Bottom Torn Edge Overlay -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" class="torn-edge bottom-torn">
+      <filter id="paper-shadow-bottom">
+        <feDropShadow dx="0" dy="-4" stdDeviation="3" flood-color="#000" flood-opacity="0.6"/>
+      </filter>
+      <!-- Solid black masking that starts at the jagged line -->
+      <path d="M0,120 L1200,120 L1200,60 Q1140,70 1080,50 T1020,60 T960,40 T900,65 T840,45 T780,60 T720,35 T660,55 T600,50 T540,70 T480,40 T420,60 T360,45 T300,65 T240,40 T180,55 T120,50 T60,70 L0,60 Z" fill="#0b0b0e" filter="url(#paper-shadow-bottom)"/>
+      <path class="charred-edge" d="M0,60 Q60,70 120,50 T180,55 T240,40 T300,65 T360,45 T420,60 T480,40 T540,70 T600,50 T660,55 T720,35 T780,60 T840,45 T900,65 T960,40 T1020,60 T1080,50 T1140,70 L1200,60" fill="none" stroke="#4a2c11" stroke-width="4" opacity="0.85"/>
+      <path d="M0,60 Q60,70 120,50 T180,55 T240,40 T300,65 T360,45 T420,60 T480,40 T540,70 T600,50 T660,55 T720,35 T780,60 T840,45 T900,65 T960,40 T1020,60 T1080,50 T1140,70 L1200,60" fill="none" stroke="#1c0a02" stroke-width="1.5" opacity="0.95"/>
+    </svg>
+  </section>
+
+
+  <!-- HOW IT WORKS -->
+  <section class="how-it-works" id="how-it-works">
+    <!-- Lannister Lion Watermark -->
+    <div class="house-sigil sigil-lannister">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M40,75 L42,60 L38,55 L45,45 L42,30 C42,30 48,25 55,28 C62,31 60,40 55,42 L58,55 L65,58 L62,75 M55,28 L52,20 L48,22 M55,42 L65,45 M45,45 L35,42 M42,60 L32,65" fill="none" stroke="#cfac62" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="em-tag reveal">OUR PROCESS</div>
+    <h2 class="em-title reveal delay-1">How It Works</h2>
+    <p class="em-desc reveal delay-2">From drone deployment to active rescue, our automated system ensures minimal
+      delay.</p>
+    <div class="step-grid">
+      <!-- Connection Line behind cards -->
+      <div class="step-grid-connector"></div>
+
+      <div class="step-card reveal">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="step-number">I</div>
+        <div class="step-title">UAV Deployment</div>
+        <div class="step-desc">Drones are deployed over disaster-struck areas to continuously capture live video feeds.
+        </div>
+      </div>
+      <div class="step-card reveal delay-1">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="step-number">II</div>
+        <div class="step-title">AI Processing</div>
+        <div class="step-desc">The YOLOv8 AI engine scans incoming footage for human shapes and assesses severity in
+          real-time.</div>
+      </div>
+      <div class="step-card reveal delay-2">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="step-number">III</div>
+        <div class="step-title">Instant Alerts</div>
+        <div class="step-desc">If a human is detected, GPS coordinates are logged, and an alert is broadcasted
+          immediately.</div>
+      </div>
+      <div class="step-card reveal delay-3">
+        <div class="corner-bracket corner-tl"></div>
+        <div class="corner-bracket corner-tr"></div>
+        <div class="corner-bracket corner-bl"></div>
+        <div class="corner-bracket corner-br"></div>
+        <div class="step-number">IV</div>
+        <div class="step-title">Rescue Action</div>
+        <div class="step-desc">Rescue teams receive SMS alerts with coordinates, allowing for swift, targeted
+          operations.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact-section" id="contact">
+    <!-- Baratheon Stag Watermark -->
+    <div class="house-sigil sigil-baratheon">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50,75 L50,55 L35,45 L40,40 L50,48 L55,45 L62,55 L58,75 Z M50,48 L50,30 M45,35 L38,32 M48,32 L42,28 M52,32 L58,28 M55,35 L62,32" fill="none" stroke="#cfac62" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M44,52 Q50,56 56,52 L54,50 Q50,52 46,50 Z" fill="#cfac62"/>
+      </svg>
+    </div>
+    <div class="em-tag reveal">GET IN TOUCH</div>
+    <h2 class="em-title reveal delay-1">Contact Us</h2>
+    <p class="em-desc reveal delay-2">Reach out to our team for support, deployment queries, or emergency coordination.
+    </p>
+    <div class="contact-wrap reveal delay-3">
+      <div class="corner-bracket corner-tl"></div>
+      <div class="corner-bracket corner-tr"></div>
+      <div class="corner-bracket corner-bl"></div>
+      <div class="corner-bracket corner-br"></div>
+      <div class="contact-details">
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></div>
+          <div>
+            <div class="contact-label">Phone</div>
+            <div class="contact-value">+91 98765 43210</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg></div>
+          <div>
+            <div class="contact-label">Email</div>
+            <div class="contact-value">support@uavdisaster.in</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+          <div>
+            <div class="contact-label">Address</div>
+            <div class="contact-value">UAV Disaster Response Center, Tamil Nadu, India</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="contact-icon"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+          <div>
+            <div class="contact-label">Support Hours</div>
+            <div class="contact-value">24 / 7 Emergency Support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modal for viewing and editing user profile settings -->
+  <div id="profile-modal" class="image-modal" onclick="if(event.target === this) closeProfileModal()">
+    <div class="profile-modal-content card" style="max-width: 500px; margin: 80px auto; padding: 20px; border: 2px solid var(--neon-cyan); border-radius: 8px; background: var(--bg-parchment) url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;100&quot; height=&quot;100&quot; viewBox=&quot;0 0 100 100&quot;><filter id=&quot;paper&quot;><feTurbulence type=&quot;fractalNoise&quot; baseFrequency=&quot;0.04&quot; numOctaves=&quot;3&quot; result=&quot;noise&quot;/><feColorMatrix type=&quot;matrix&quot; values=&quot;0.9 0 0 0 0  0 0.85 0 0 0  0 0 0.75 0 0  0 0 0 0.07 0&quot;/></filter><rect width=&quot;100&quot; height=&quot;100&quot; filter=&quot;url(%23paper)&quot; fill=&quot;none&quot;/></svg>'); color: var(--text-parchment); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div class="corner-bracket corner-tl"></div>
+      <div class="corner-bracket corner-tr"></div>
+      <div class="corner-bracket corner-bl"></div>
+      <div class="corner-bracket corner-br"></div>
+      
+      <!-- Top Right Edit Button (styled matching the parchment look) -->
+      <button id="prof-edit-top-btn" onclick="setProfileEditMode(true)" style="position: absolute; top: 16px; right: 50px; background: none; border: none; color: var(--text-parchment); cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 4px; z-index: 10; font-family: 'Cinzel', serif; font-weight: 700; transition: all 0.2s;" title="Edit Profile">&#9998; Edit</button>
+      
+      <span class="close-modal" onclick="closeProfileModal()" style="color: var(--text-parchment); font-size: 28px; top: 12px; right: 18px; position: absolute; z-index: 10;">&times;</span>
+      
+      <h2 style="font-family: 'Cinzel Decorative', serif; border-bottom: 2px double var(--border-parchment); padding-bottom: 8px; margin-bottom: 20px; font-size: 1.4rem; text-align: center; color: var(--text-parchment)">&#128100; Profile Details</h2>
+      
+      <div style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Username</label>
+          <div id="view-username" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-username" disabled style="display: none; background: rgba(0,0,0,0.05); color: rgba(44, 36, 26, 0.6); cursor: not-allowed; font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px;" />
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Full Name</label>
+          <div id="view-name" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-name" disabled placeholder="E.g. Captain Ranjith" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Email Address</label>
+          <div id="view-email" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-email" type="email" disabled placeholder="name@domain.com" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Phone Number</label>
+          <div id="view-phone" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-phone" disabled placeholder="9876543210" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Designation</label>
+          <div id="view-designation" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <input class="form-input" id="prof-designation" disabled placeholder="E.g. Search & Rescue Lead" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;" />
+        </div>
+
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Role Type</label>
+          <div id="view-role" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500;"></div>
+          <select class="form-select" id="prof-role" disabled style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; cursor: not-allowed;">
+            <option value="common user">&#128100; Common User</option>
+            <option value="volunteer">&#129489;&#8205;&#129309; Volunteer</option>
+            <option value="victim">&#128546; Victim</option>
+            <option value="rescue member">&#128736; Rescue Member</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label class="form-label" style="color: var(--text-parchment); font-weight: 700; font-family: 'Cinzel', serif; font-size: 0.8rem;">Address (Optional)</label>
+          <div id="view-address" style="font-family: 'Lora', serif; padding: 4px 0; font-size: 0.95rem; color: var(--text-parchment); font-weight: 500; white-space: pre-wrap;"></div>
+          <textarea class="form-input" id="prof-address" disabled placeholder="Residential or base camp address..." rows="2" style="display: none; background: rgba(0,0,0,0.05); color: var(--text-parchment); font-family: 'Lora', serif; width: 100%; border: 1px solid var(--border-parchment); border-radius: 4px; padding: 8px; resize: vertical; cursor: not-allowed;"></textarea>
+        </div>
+
+        <button class="btn btn-primary" id="prof-edit-btn" onclick="setProfileEditMode(true)" style="width: 100%; justify-content: center; margin-top: 10px; font-size: 0.85rem;">&#9998; Edit Profile</button>
+
+        <div id="prof-save-actions" style="display: none; gap: 10px; margin-top: 10px;">
+          <button class="btn btn-primary" onclick="saveProfile()" style="flex: 1; justify-content: center; font-size: 0.85rem;">&#128190; Save Profile</button>
+          <button class="btn btn-outline" onclick="setProfileEditMode(false)" style="flex: 1; justify-content: center; font-size: 0.85rem; border: 1px solid var(--border-parchment); color: var(--text-parchment)">&#10005; Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <footer>
+    <span>UAV Disaster Identification &amp; Alerting System</span> &nbsp;|&nbsp; YOLOv8 Detection &nbsp;|&nbsp; Ancient
+    Codex theme &nbsp;|&nbsp; Flask Backend
+  </footer>
+
+  <script>
+    function openDashboardFullscreen() {
+      const w = window.open('/dashboard', '_blank');
+      w.addEventListener('load', () => {
+        const el = w.document.documentElement;
+        const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (req) req.call(el);
+      });
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function setProfileEditMode(enabled) {
+      const fieldIds = ['prof-name', 'prof-email', 'prof-phone', 'prof-designation', 'prof-role', 'prof-address'];
+      
+      // If turning off edit mode, populate the view spans with current input values
+      if (!enabled) {
+        document.getElementById('view-username').textContent = document.getElementById('prof-username').value;
+        document.getElementById('view-name').textContent = document.getElementById('prof-name').value || '—';
+        document.getElementById('view-email').textContent = document.getElementById('prof-email').value || '—';
+        document.getElementById('view-phone').textContent = document.getElementById('prof-phone').value || '—';
+        document.getElementById('view-designation').textContent = document.getElementById('prof-designation').value || '—';
+        
+        const roleSelect = document.getElementById('prof-role');
+        document.getElementById('view-role').textContent = roleSelect.options[roleSelect.selectedIndex]?.text || '—';
+        
+        document.getElementById('view-address').textContent = document.getElementById('prof-address').value || '—';
+      }
+
+      // Toggle display of view elements vs edit inputs
+      const viewIds = ['view-username', 'view-name', 'view-email', 'view-phone', 'view-designation', 'view-role', 'view-address'];
+      viewIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.display = enabled ? 'none' : 'block';
+        }
+      });
+
+      // Other edit inputs
+      fieldIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+          if (enabled) {
+            input.removeAttribute('disabled');
+            input.style.display = 'block';
+            input.style.background = 'rgba(255, 255, 255, 0.45)';
+            input.style.cursor = 'text';
+          } else {
+            input.setAttribute('disabled', 'true');
+            input.style.display = 'none';
+            input.style.background = 'rgba(0,0,0,0.05)';
+            input.style.cursor = 'not-allowed';
+          }
+        }
+      });
+
+      // Special handling for username: it is always displayed as text and never editable
+      const userEditInput = document.getElementById('prof-username');
+      if (userEditInput) userEditInput.style.display = 'none';
+      const viewUser = document.getElementById('view-username');
+      if (viewUser) viewUser.style.display = 'block';
+
+      // Toggle button visibility
+      const editBtn = document.getElementById('prof-edit-btn');
+      const editTopBtn = document.getElementById('prof-edit-top-btn');
+      const saveActions = document.getElementById('prof-save-actions');
+      if (enabled) {
+        if (editBtn) editBtn.style.display = 'none';
+        if (editTopBtn) editTopBtn.style.display = 'none';
+        if (saveActions) saveActions.style.display = 'flex';
+      } else {
+        if (editBtn) editBtn.style.display = 'block';
+        if (editTopBtn) editTopBtn.style.display = 'inline-flex';
+        if (saveActions) saveActions.style.display = 'none';
+      }
+    }
+
+    function getDefaultDesignation(role) {
+      if (role === 'common user') return 'Citizen / Community Member';
+      if (role === 'volunteer') return 'Community Responder';
+      if (role === 'victim') return 'Disaster Affected Person';
+      if (role === 'rescue member') return 'UAV Operations & Rescue Officer';
+      return 'Citizen / Community Member';
+    }
+
+    async function openProfileModal() {
+      showToast('Fetching profile details...');
+      try {
+        const p = await fetch('/profile').then(r => r.json());
+        if (p.error) {
+          showToast('Failed to load profile.');
+          return;
+        }
+        document.getElementById('prof-username').value = p.username || '';
+        document.getElementById('prof-name').value = p.name || '';
+        document.getElementById('prof-email').value = p.email || '';
+        document.getElementById('prof-phone').value = p.phone || '';
+        
+        const role = p.role || 'common user';
+        document.getElementById('prof-role').value = role;
+        
+        let designation = p.designation || '';
+        if (!designation) {
+          designation = getDefaultDesignation(role);
+        }
+        document.getElementById('prof-designation').value = designation;
+        
+        document.getElementById('prof-address').value = p.address || '';
+        
+        // Start in read-only View Mode (will populate view elements)
+        setProfileEditMode(false);
+        document.getElementById('profile-modal').style.display = 'block';
+      } catch (e) {
+        showToast('Error connecting to server.');
+      }
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').style.display = 'none';
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('prof-name').value.trim();
+      const email = document.getElementById('prof-email').value.trim();
+      const phone = document.getElementById('prof-phone').value.trim();
+      const designation = document.getElementById('prof-designation').value.trim();
+      const role = document.getElementById('prof-role').value;
+      const address = document.getElementById('prof-address').value.trim();
+      
+      showToast('Saving profile...');
+      try {
+        const res = await fetch('/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, phone, designation, role, address })
+        }).then(r => r.json());
+        
+        if (res.status === 'success') {
+          showToast('Profile updated successfully!');
+          setProfileEditMode(false);
+          closeProfileModal();
+        } else {
+          showToast('Failed: ' + (res.message || 'Unknown error'));
+        }
+      } catch (e) {
+        showToast('Error saving profile settings.');
+      }
+    }
+
+    // Auto-update designation when selecting a role type
+    document.addEventListener('DOMContentLoaded', () => {
+      const profRoleSelect = document.getElementById('prof-role');
+      if (profRoleSelect) {
+        profRoleSelect.addEventListener('change', () => {
+          const role = profRoleSelect.value;
+          const designationInput = document.getElementById('prof-designation');
+          if (designationInput) {
+            designationInput.value = getDefaultDesignation(role);
+          }
+        });
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Scroll Reveal Animation Intersection Observer
+      const revealElements = document.querySelectorAll('.reveal');
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -40px 0px'
+      });
+
+      revealElements.forEach(el => revealObserver.observe(el));
+    });
+  </script>
+</body>
+
+</html>
